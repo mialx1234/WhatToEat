@@ -514,7 +514,7 @@ body.guest-mode nav { display: none; }
     </div>
     <div class="form-group">
       <label class="form-label">Restaurant</label>
-      <input class="form-input" id="input-restaurant" placeholder="e.g. Hana Sushi" maxlength="50">
+      <input class="form-input" id="input-restaurant" placeholder="e.g. Hana Sushi (optional)" maxlength="50">
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" style="flex:1" onclick="closeAddModal()">Cancel</button>
@@ -910,8 +910,7 @@ function saveCustomFood() {
   const dish = document.getElementById('input-dish').value.trim();
   const restaurant = document.getElementById('input-restaurant').value.trim();
   if (!dish) { document.getElementById('input-dish').focus(); return; }
-  if (!restaurant) { document.getElementById('input-restaurant').focus(); return; }
-  const food = {id:'c'+Date.now(), emoji:selectedEmoji, dish, restaurant, cat:'custom'};
+  const food = {id:'c'+Date.now(), emoji:selectedEmoji, dish, restaurant: restaurant || '', cat:'custom'};
   customFoods.push(food);
   saveToStorage();
   closeAddModal();
@@ -1148,8 +1147,12 @@ function initFirebase() {
 // ══════════════════════════════════════════
 let matchRoomId    = null;
 let matchRole      = null;   // 'host' | 'guest'
-let matchFoods     = [];
-let matchIndex     = 0;
+let matchFoods     = [];     // full combined pool from Firebase
+let swipeQueue     = [];     // current batch of 20 (locally shuffled)
+let matchIndex     = 0;      // index within swipeQueue
+let usedIds        = new Set(); // food IDs already shown
+let batchNum       = 0;
+const BATCH_SIZE   = 20;
 let mySwipes       = {};     // {foodId: true|false}
 let theirSwipes    = {};
 let foundMatches   = [];
@@ -1339,15 +1342,32 @@ async function joinRoom(codeOverride) {
 // ══════════════════════════════════════════
 // BEGIN SWIPING
 // ══════════════════════════════════════════
+function loadNextBatch() {
+  const remaining = matchFoods.filter(f => !usedIds.has(f.id));
+  if (!remaining.length) return false;
+  // Each client shuffles independently — different order per person
+  const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+  swipeQueue = shuffled.slice(0, BATCH_SIZE);
+  swipeQueue.forEach(f => usedIds.add(f.id));
+  matchIndex = 0;
+  batchNum++;
+  if (batchNum > 1) showToast(`🎴 Next ${swipeQueue.length} cards loaded!`);
+  return true;
+}
+
 function beginSwiping(foodsArray) {
   if (swipingActive) return;
   swipingActive  = true;
   matchFoods     = foodsArray;
+  swipeQueue     = [];
+  usedIds        = new Set();
   matchIndex     = 0;
+  batchNum       = 0;
   mySwipes       = {};
   theirSwipes    = {};
   foundMatches   = [];
   shownMatchIds  = new Set();
+  loadNextBatch();
 
   // Real-time listener for their swipes
   const theirRole = matchRole === 'host' ? 'guest' : 'host';
@@ -1365,17 +1385,26 @@ function beginSwiping(foodsArray) {
 }
 
 function renderSwipeCard() {
-  // Skip room-blocked foods
-  while (matchIndex < matchFoods.length && roomBlocked.has(matchFoods[matchIndex].id)) {
+  // Skip room-blocked foods in current batch
+  while (matchIndex < swipeQueue.length && roomBlocked.has(swipeQueue[matchIndex].id)) {
     matchIndex++;
   }
-  if (matchIndex >= matchFoods.length) { endSwiping(); return; }
-  const f = matchFoods[matchIndex];
+  // If batch exhausted, load next 20
+  if (matchIndex >= swipeQueue.length) {
+    const hasMore = loadNextBatch();
+    if (!hasMore) { endSwiping(); return; }
+    // Skip blocked in new batch too
+    while (matchIndex < swipeQueue.length && roomBlocked.has(swipeQueue[matchIndex].id)) {
+      matchIndex++;
+    }
+    if (matchIndex >= swipeQueue.length) { endSwiping(); return; }
+  }
+  const f = swipeQueue[matchIndex];
   document.getElementById('swipe-emoji').textContent = f.emoji;
   document.getElementById('swipe-dish').textContent  = f.dish;
   document.getElementById('swipe-rest').textContent  = f.restaurant;
   document.getElementById('swipe-progress').textContent =
-    `Card ${matchIndex + 1} of ${matchFoods.length}`;
+    `Batch ${batchNum} · Card ${matchIndex + 1} of ${swipeQueue.length}`;
 
   const card = document.getElementById('swipe-card');
   card.classList.remove('fly-left','fly-right','show-like','show-nope');
@@ -1383,8 +1412,8 @@ function renderSwipeCard() {
 }
 
 function doSwipe(liked) {
-  if (matchIndex >= matchFoods.length || !swipingActive) return;
-  const food = matchFoods[matchIndex];
+  if (matchIndex >= swipeQueue.length || !swipingActive) return;
+  const food = swipeQueue[matchIndex];
   const card = document.getElementById('swipe-card');
 
   card.classList.add(liked ? 'fly-right' : 'fly-left');
@@ -1534,7 +1563,10 @@ function leaveRoom(notify = true) {
 
   matchRole     = null;
   matchFoods    = [];
+  swipeQueue    = [];
+  usedIds       = new Set();
   matchIndex    = 0;
+  batchNum      = 0;
   mySwipes      = {};
   theirSwipes   = {};
   foundMatches  = [];
@@ -1660,7 +1692,7 @@ function renderRoomAdd() {
       </div>
       <div>
         <div class="form-label" style="margin-bottom:6px">Restaurant</div>
-        <input class="form-input" id="rmenu-restaurant" placeholder="e.g. Hana Sushi" maxlength="50">
+        <input class="form-input" id="rmenu-restaurant" placeholder="e.g. Hana Sushi (optional)" maxlength="50">
       </div>
       <button class="rmenu-add-btn" onclick="addFoodToRoom()">Add to room + my list</button>
     </div>`;
@@ -1709,13 +1741,12 @@ function saveToMyList(id) {
 function addFoodToRoom() {
   const dish       = document.getElementById('rmenu-dish')?.value.trim();
   const restaurant = document.getElementById('rmenu-restaurant')?.value.trim();
-  if (!dish)       { document.getElementById('rmenu-dish')?.focus(); return; }
-  if (!restaurant) { document.getElementById('rmenu-restaurant')?.focus(); return; }
+  if (!dish) { document.getElementById('rmenu-dish')?.focus(); return; }
 
   const newFood = {
     id: 'r' + Date.now(),
     emoji: rmenuSelectedEmoji,
-    dish, restaurant,
+    dish, restaurant: restaurant || '',
     cat: 'custom',
     _source: matchRole  // tag as mine
   };
