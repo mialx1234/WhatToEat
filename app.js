@@ -619,13 +619,10 @@ function dislikeResult() {
 // SHARE
 // ══════════════════════════════════════════
 function shareWheel() {
-  const items = activeItems();
-  if (!items.length) return;
-  const data = { name: 'you', items: items.map(f => ({emoji:f.emoji,dish:f.dish,restaurant:f.restaurant})) };
-  const url  = `${location.origin}${location.pathname}#share=${btoa(JSON.stringify(data))}`;
+  const url = `${location.origin}${location.pathname}`;
   navigator.clipboard.writeText(url)
-    .then(() => showToast('🔗 Share link copied!'))
-    .catch(() => prompt('Copy this share link:', url));
+    .then(() => showToast('🔗 Link copied!'))
+    .catch(() => prompt('Share this link:', url));
 }
 
 // ══════════════════════════════════════════
