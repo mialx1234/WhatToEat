@@ -1101,10 +1101,10 @@ function genRoomId() {
 // COMBINED FOOD POOL
 // ══════════════════════════════════════════
 function buildCombinedPool(hostPrefs, guestPrefs) {
-  const hostBlocked  = new Set(hostPrefs.blockedIds  || []);
-  const guestBlocked = new Set(guestPrefs.blockedIds || []);
-  const hostCustom   = hostPrefs.customFoods  || [];
-  const guestCustom  = guestPrefs.customFoods || [];
+  const hostBlocked  = new Set(hostPrefs?.blockedIds  || []);
+  const guestBlocked = new Set(guestPrefs?.blockedIds || []);
+  const hostCustom   = hostPrefs?.customFoods  || [];
+  const guestCustom  = guestPrefs?.customFoods || [];
 
   const seen = new Set();
   const pool = [];
@@ -1194,7 +1194,9 @@ async function hostStartGame() {
     const room = snap.val();
     if (!room?.guest) return;
 
-    const pool = buildCombinedPool(room.host.prefs, room.guest.prefs);
+    const hostPrefs  = room.host?.prefs  || {};
+    const guestPrefs = room.guest?.prefs || {};
+    const pool = buildCombinedPool(hostPrefs, guestPrefs);
     await db.ref(`rooms/${matchRoomId}/foods`).set(pool);
     await db.ref(`rooms/${matchRoomId}/status`).set('active');
 
