@@ -450,7 +450,10 @@ body.guest-mode nav { display: none; }
         <span style="opacity:0.6">Waiting for friend's choices…</span>
       </div>
 
-      <button class="btn-secondary" style="margin-top:16px;font-size:13px;padding:8px 18px" onclick="openRoomMenu('foods')">📋 View menu</button>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn-secondary" style="font-size:13px;padding:8px 18px" onclick="openRoomMenu('foods')">📋 View menu</button>
+        <button class="btn-secondary" style="font-size:13px;padding:8px 18px;color:#FF5252;border-color:#FF5252" onclick="leaveRoom()">Leave room</button>
+      </div>
     </div>
 
     <!-- Match! -->
@@ -920,8 +923,8 @@ document.addEventListener('keydown', e => {
   if (e.key==='Escape') { closeAddModal(); closeResult(); closeRoomMenu(); }
   if (e.key==='Enter' && document.getElementById('add-modal').classList.contains('open')) saveCustomFood();
   // Arrow keys to swipe during Match
-  if (e.key==='ArrowRight' && swipingActive) doSwipe(true);
-  if (e.key==='ArrowLeft'  && swipingActive) doSwipe(false);
+  if (e.key==='ArrowRight' && swipingActive) { e.preventDefault(); doSwipe(true); }
+  if (e.key==='ArrowLeft'  && swipingActive) { e.preventDefault(); doSwipe(false); }
 });
 
 // ══════════════════════════════════════════
