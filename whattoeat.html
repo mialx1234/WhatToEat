@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatToEat 🎡</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #FF5C3A; --primary-light: #FF8A6B;
+  --bg: #F7F6F3; --card: #FFFFFF; --border: #E8E5DF;
+  --text: #1A1A1A; --muted: #8A8A8A;
+  --radius: 14px; --radius-sm: 9px;
+}
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Header ── */
+header { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 16px; display: flex; align-items: center; justify-content: space-between; height: 54px; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 18px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 5px; }
+.share-banner { display: none; background: linear-gradient(135deg,#FF5C3A,#FF8A6B); color: white; text-align: center; padding: 9px; font-size: 14px; font-weight: 600; }
+.share-banner.visible { display: block; }
+
+/* ── Tabs ── */
+nav { display: flex; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 16px; }
+body.guest-mode nav { display: none; }
+.tab { padding: 12px 14px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border: none; background: transparent; border-bottom: 2px solid transparent; transition: all 0.15s; font-family: inherit; }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* ── Views ── */
+.view { display: none; flex: 1; overflow: hidden; }
+.view.active { display: flex; flex-direction: column; }
+
+/* ═══════════════════
+   SPIN VIEW
+═══════════════════ */
+#spin-view { align-items: center; justify-content: center; overflow-y: auto; }
+
+.spin-layout {
+  width: 100%; max-width: 420px; margin: 0 auto;
+  padding: 24px 20px 40px;
+  display: flex; flex-direction: column; align-items: center; gap: 22px;
+}
+
+/* Tagline */
+.spin-tagline {
+  text-align: center;
+  font-size: 15px; font-weight: 600; color: var(--text);
+  line-height: 1.4;
+}
+.spin-tagline span {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--muted); margin-top: 3px;
+}
+.spin-meta-blocked { font-size: 12px; color: #ff9f9f; cursor: pointer; margin-top: 2px; display: block; }
+.spin-meta-blocked:hover { color: #ff6b6b; text-decoration: underline; }
+
+/* Wheel */
+.wheel-wrap {
+  position: relative;
+  width: 300px; height: 300px;
+}
+@media (min-width: 420px) { .wheel-wrap { width: 340px; height: 340px; } }
+
+#wheel-canvas {
+  width: 100%; height: 100%;
+  display: block;
+  filter: drop-shadow(0 6px 24px rgba(0,0,0,0.13));
+}
+
+.wheel-pointer {
+  position: absolute; top: -2px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 20px solid #1A1A1A;
+  z-index: 10;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.25));
+}
+
+/* Wheel + button wrapper — sizes to wheel width so button centers with it */
+.wheel-section { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+
+/* Spin actions */
+.spin-actions { display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; }
+.btn-spin {
+  flex: 1; background: linear-gradient(135deg,#FF5C3A,#FF8A6B); color: white;
+  border: none; padding: 15px; border-radius: 100px; font-size: 17px;
+  font-weight: 800; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 16px rgba(255,92,58,0.32); letter-spacing: -0.3px;
+  transition: all 0.18s;
+}
+.btn-spin:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,92,58,0.42); }
+.btn-spin:active { transform: translateY(0); }
+.btn-spin:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-icon {
+  background: var(--card); border: 1.5px solid var(--border); color: var(--muted);
+  width: 50px; height: 50px; border-radius: 50%; font-size: 18px; cursor: pointer;
+  transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.btn-icon:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ═══════════════════
+   BROWSE VIEW
+═══════════════════ */
+#browse-view { overflow: hidden; }
+.browse-top { background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 16px 0; flex-shrink: 0; }
+.browse-search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.search-input { flex: 1; padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 100px; font-size: 14px; font-family: inherit; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.15s; }
+.search-input:focus { border-color: var(--primary); background: white; }
+.btn-add-custom { background: var(--primary); color: white; border: none; padding: 9px 14px; border-radius: 100px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.15s; }
+.btn-add-custom:hover { background: #e84d2e; }
+
+.cat-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.cat-pills::-webkit-scrollbar { display: none; }
+.pill { padding: 5px 13px; border-radius: 100px; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; border: 1.5px solid var(--border); background: var(--bg); color: var(--muted); transition: all 0.15s; flex-shrink: 0; }
+.pill.active { background: var(--primary); color: white; border-color: var(--primary); }
+.pill:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+.food-list-wrap { flex: 1; overflow-y: auto; padding: 8px 16px 80px; }
+
+/* Food rows */
+.food-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 6px; transition: all 0.15s; }
+.food-row.blocked { opacity: 0.45; background: var(--bg); }
+.food-row-emoji { font-size: 24px; flex-shrink: 0; width: 30px; text-align: center; }
+.food-row-text { flex: 1; min-width: 0; }
+.food-row-dish { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.food-row-rest { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+.row-block-btn { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; color: var(--muted); }
+.row-block-btn:hover { border-color: #ff4444; color: #ff4444; transform: scale(1.08); }
+.row-block-btn.blocked { border-color: var(--border); color: var(--muted); }
+.row-block-btn.blocked:hover { border-color: #22c55e; color: #22c55e; }
+
+.category-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 10px 0 5px; display: block; }
+.blocked-toggle { text-align: center; padding: 14px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+.blocked-toggle:hover { color: var(--primary); }
+
+/* ═══════════════════
+   ADD MODAL
+═══════════════════ */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+@media (min-width: 500px) { .modal-overlay { align-items: center; } }
+.modal { background: var(--card); border-radius: var(--radius) var(--radius) 0 0; padding: 24px 20px 32px; width: 100%; max-width: 420px; animation: slideUp 0.22s ease; }
+@media (min-width: 500px) { .modal { border-radius: var(--radius); } }
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--muted); }
+.form-input { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; font-family: inherit; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.15s; }
+.form-input:focus { border-color: var(--primary); background: white; }
+.emoji-grid { display: grid; grid-template-columns: repeat(8,1fr); gap: 3px; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 8px; max-height: 148px; overflow-y: auto; }
+.emoji-btn { font-size: 21px; padding: 4px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; background: none; text-align: center; line-height: 1.3; transition: all 0.1s; }
+.emoji-btn:hover { background: white; }
+.emoji-btn.selected { border-color: var(--primary); background: white; }
+.modal-footer { display: flex; gap: 8px; margin-top: 18px; }
+.btn-primary { background: var(--primary); color: white; border: none; padding: 11px 18px; border-radius: 100px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.btn-primary:hover { background: #e84d2e; }
+.btn-secondary { background: var(--card); color: var(--text); border: 1.5px solid var(--border); padding: 10px 16px; border-radius: 100px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ═══════════════════
+   RESULT OVERLAY
+═══════════════════ */
+.result-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.52); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+.result-overlay.open { display: flex; }
+.result-card { background: white; border-radius: 24px; padding: 36px 28px 28px; text-align: center; max-width: 340px; width: 100%; animation: popIn 0.28s cubic-bezier(0.34,1.56,0.64,1); position: relative; }
+.result-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; padding: 4px; border-radius: 50%; transition: all 0.15s; }
+.result-close:hover { background: var(--bg); color: var(--text); }
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.result-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.result-emoji-big { font-size: 72px; margin-bottom: 12px; line-height: 1; display: block; }
+.result-dish-name { font-size: 24px; font-weight: 800; margin-bottom: 5px; letter-spacing: -0.4px; line-height: 1.2; }
+.result-rest-name { font-size: 14px; color: var(--muted); font-weight: 500; margin-bottom: 26px; }
+
+.result-confirm { width: 100%; background: linear-gradient(135deg,#FF5C3A,#FF8A6B); color: white; border: none; padding: 14px; border-radius: 100px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 10px; transition: all 0.15s; }
+.result-confirm:hover { opacity: 0.92; }
+.result-row { display: flex; gap: 8px; }
+.result-row-btn { flex: 1; padding: 11px; border-radius: 100px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); }
+.result-row-btn:hover { border-color: var(--primary); color: var(--primary); }
+.result-row-btn.dislike:hover { border-color: #ff4444; color: #ff4444; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1A1A1A; color: white; padding: 11px 20px; border-radius: 100px; font-size: 13px; font-weight: 600; z-index: 500; transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ═══════════════════
+   MATCH VIEW
+═══════════════════ */
+#match-view { display: none; }
+#match-view.active { display: block; }
+.match-layout { max-width: 420px; margin: 0 auto; padding: 24px 16px 48px; }
+
+.msub { display: none; flex-direction: column; align-items: center; }
+.msub.active { display: flex; }
+
+/* Lobby */
+.match-headline { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 6px; text-align: center; }
+.match-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; text-align: center; line-height: 1.5; }
+.match-action-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; padding: 20px 18px; width: 100%; margin-bottom: 12px; cursor: pointer; transition: all 0.15s; text-align: left; }
+.match-action-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(255,92,58,0.12); }
+.match-action-icon { font-size: 26px; margin-bottom: 8px; }
+.match-action-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+.match-action-desc { font-size: 13px; color: var(--muted); }
+.match-divider { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 4px 0 14px; }
+.match-input-row { display: flex; gap: 8px; width: 100%; }
+.match-code-input { flex: 1; border: 1.5px solid var(--border); border-radius: 100px; padding: 11px 18px; font-size: 15px; font-family: inherit; outline: none; letter-spacing: 3px; text-transform: uppercase; background: var(--card); color: var(--text); }
+.match-code-input:focus { border-color: var(--primary); }
+
+/* Waiting room */
+.room-code-box { background: var(--bg); border: 2px dashed var(--border); border-radius: 20px; padding: 28px 20px; text-align: center; width: 100%; margin-bottom: 20px; }
+.room-code-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.room-code-big { font-size: 36px; font-weight: 900; letter-spacing: 6px; color: var(--primary); margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+.room-code-copy { background: none; border: 1.5px solid var(--border); border-radius: 100px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; color: var(--text); }
+.room-code-copy:hover { border-color: var(--primary); color: var(--primary); }
+.players-row { display: flex; gap: 12px; width: 100%; margin-bottom: 20px; }
+.player-card { flex: 1; background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px 12px; text-align: center; }
+.player-card.you { border-color: var(--primary); }
+.player-avatar { font-size: 28px; margin-bottom: 6px; }
+.player-name { font-size: 13px; font-weight: 700; }
+.player-status { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.waiting-status { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+.waiting-dot { width: 10px; height: 10px; border-radius: 50%; background: #F5A623; animation: pulse 1.4s ease-in-out infinite; flex-shrink: 0; }
+.waiting-dot.connected { background: #4CAF50; animation: none; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Swiping */
+.swipe-progress { font-size: 12px; color: var(--muted); margin-bottom: 18px; font-weight: 600; letter-spacing: 0.3px; }
+.swipe-card-wrap { width: 100%; max-width: 300px; position: relative; height: 360px; margin-bottom: 12px; }
+.swipe-card { position: absolute; inset: 0; background: var(--card); border-radius: 28px; border: 1.5px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.08); cursor: grab; user-select: none; will-change: transform; }
+.swipe-card:active { cursor: grabbing; }
+.swipe-card.fly-left  { animation: flyLeft  0.35s ease forwards; }
+.swipe-card.fly-right { animation: flyRight 0.35s ease forwards; }
+@keyframes flyLeft  { to { transform: translateX(-150%) rotate(-20deg); opacity: 0; } }
+@keyframes flyRight { to { transform: translateX(150%)  rotate(20deg);  opacity: 0; } }
+.like-stamp { position: absolute; top: 22px; right: 18px; border: 3px solid #4CAF50; color: #4CAF50; font-size: 18px; font-weight: 900; padding: 3px 10px; border-radius: 8px; transform: rotate(-15deg); opacity: 0; transition: opacity 0.1s; letter-spacing: 1px; }
+.nope-stamp { position: absolute; top: 22px; left: 18px; border: 3px solid #F44336; color: #F44336; font-size: 18px; font-weight: 900; padding: 3px 10px; border-radius: 8px; transform: rotate(15deg); opacity: 0; transition: opacity 0.1s; letter-spacing: 1px; }
+.swipe-card.show-like .like-stamp { opacity: 1; }
+.swipe-card.show-nope .nope-stamp { opacity: 1; }
+.swipe-emoji { font-size: 72px; margin-bottom: 14px; line-height: 1; pointer-events: none; }
+.swipe-dish  { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 6px; pointer-events: none; }
+.swipe-rest  { font-size: 13px; color: var(--muted); pointer-events: none; }
+.swipe-hint  { font-size: 11px; color: var(--muted); margin-bottom: 18px; opacity: 0.7; }
+.swipe-btns  { display: flex; gap: 20px; }
+.swipe-btn   { width: 60px; height: 60px; border-radius: 50%; border: 2px solid; font-size: 22px; cursor: pointer; background: var(--card); display: flex; align-items: center; justify-content: center; transition: all 0.15s; box-shadow: 0 4px 12px rgba(0,0,0,0.09); }
+.swipe-btn.pass { border-color: #FF5252; color: #FF5252; }
+.swipe-btn.pass:hover { background: #FF5252; color: white; transform: scale(1.1); }
+.swipe-btn.like-btn { border-color: #4CAF50; color: #4CAF50; }
+.swipe-btn.like-btn:hover { background: #4CAF50; color: white; transform: scale(1.1); }
+.friend-likes { margin-top: 18px; text-align: center; font-size: 12px; color: var(--muted); min-height: 20px; }
+.friend-like-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.friend-chip { background: #E8F5E9; border: 1px solid #A5D6A7; border-radius: 100px; padding: 3px 10px; font-size: 12px; color: #388E3C; font-weight: 600; }
+
+/* Match celebration */
+.match-confetti { font-size: 48px; margin-bottom: 12px; animation: bob 0.7s ease infinite alternate; }
+@keyframes bob { from { transform: translateY(0) rotate(-5deg); } to { transform: translateY(-10px) rotate(5deg); } }
+.match-title { font-size: 30px; font-weight: 900; letter-spacing: -0.8px; margin-bottom: 6px; background: linear-gradient(135deg, var(--primary), #FF8A6B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.match-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+.match-food-card { background: var(--card); border-radius: 24px; padding: 28px 20px; text-align: center; margin: 16px 0; width: 100%; box-shadow: 0 8px 32px rgba(255,92,58,0.13); border: 2px solid rgba(255,92,58,0.18); }
+.match-food-emoji { font-size: 68px; margin-bottom: 12px; display: block; }
+.match-food-dish  { font-size: 22px; font-weight: 800; margin-bottom: 5px; }
+.match-food-rest  { font-size: 13px; color: var(--muted); }
+
+/* No match / results */
+.nomatch-icon  { font-size: 52px; margin-bottom: 12px; }
+.nomatch-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.nomatch-desc  { font-size: 14px; color: var(--muted); margin-bottom: 20px; text-align: center; }
+.nomatch-list  { width: 100%; margin-bottom: 20px; }
+.nomatch-row   { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--card); border: 1.5px solid var(--border); border-radius: 14px; margin-bottom: 8px; }
+.nomatch-emoji { font-size: 26px; }
+.nomatch-dish  { font-size: 14px; font-weight: 600; }
+.nomatch-rest  { font-size: 12px; color: var(--muted); }
+
+/* ═══════════════════
+   ROOM MENU MODAL
+═══════════════════ */
+.room-menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 400; align-items: flex-end; }
+.room-menu-overlay.open { display: flex; }
+.room-menu-sheet { background: white; border-radius: 24px 24px 0 0; width: 100%; max-height: 82vh; display: flex; flex-direction: column; animation: slideUp 0.26s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.room-menu-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+.room-menu-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 0; }
+.room-menu-title { font-size: 17px; font-weight: 800; }
+.room-menu-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 4px 6px; border-radius: 50%; transition: background 0.15s; }
+.room-menu-close:hover { background: var(--bg); }
+.room-menu-tabs { display: flex; padding: 10px 16px 0; border-bottom: 1.5px solid var(--border); gap: 4px; }
+.rmt { flex: 1; padding: 8px 4px; font-size: 13px; font-weight: 600; border: none; background: none; cursor: pointer; color: var(--muted); border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; font-family: inherit; transition: all 0.15s; }
+.rmt.active { color: var(--primary); border-bottom-color: var(--primary); }
+.room-menu-body { flex: 1; overflow-y: auto; padding: 8px 16px 40px; }
+.rmenu-food-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.rmenu-emoji { font-size: 22px; flex-shrink: 0; }
+.rmenu-info  { flex: 1; min-width: 0; }
+.rmenu-dish  { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rmenu-rest  { font-size: 11px; color: var(--muted); }
+.rmenu-tag   { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+.rmenu-tag.mine   { color: var(--primary); }
+.rmenu-tag.theirs { color: #7B6FD4; }
+.rmenu-actions { display: flex; gap: 5px; flex-shrink: 0; }
+.rmenu-btn { font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 10px; cursor: pointer; border: 1.5px solid; font-family: inherit; transition: all 0.12s; background: none; white-space: nowrap; }
+.rmenu-btn.block   { border-color: #FF5252; color: #FF5252; }
+.rmenu-btn.block:hover { background: #FF5252; color: white; }
+.rmenu-btn.save    { border-color: #4CAF50; color: #4CAF50; }
+.rmenu-btn.save:hover  { background: #4CAF50; color: white; }
+.rmenu-btn.unblock { border-color: var(--primary); color: var(--primary); }
+.rmenu-btn.unblock:hover { background: var(--primary); color: white; }
+.rmenu-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); padding: 14px 0 4px; }
+.rmenu-empty { text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; }
+/* Add food form inside room menu */
+.rmenu-add-form { display: flex; flex-direction: column; gap: 14px; padding-top: 8px; }
+.rmenu-emoji-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.rmenu-emoji-btn  { font-size: 22px; background: var(--bg); border: 2px solid transparent; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+.rmenu-emoji-btn.selected { border-color: var(--primary); background: rgba(255,92,58,0.08); }
+.rmenu-add-btn { width: 100%; padding: 13px; border-radius: 100px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; border: none; background: var(--primary); color: white; transition: opacity 0.15s; }
+.rmenu-add-btn:hover { opacity: 0.9; }
+</style>
+<!-- Firebase Realtime Database (compat v10) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="share-banner" id="share-banner"></div>
+<header>
+  <div class="logo">🎡 WhatToEat</div>
+</header>
+<nav id="main-nav">
+  <button class="tab active" onclick="switchTab('spin')">🎡 Spin</button>
+  <button class="tab" onclick="switchTab('browse')">🍽️ Browse</button>
+  <button class="tab" onclick="switchTab('match')">👥 Match</button>
+</nav>
+
+<!-- ═══ SPIN VIEW ═══ -->
+<div class="view active" id="spin-view">
+  <div class="spin-layout">
+
+    <div class="spin-tagline">
+      Can't decide what to eat?
+      <span>Give it a spin — let fate choose for you 🍽️</span>
+      <a class="spin-meta-blocked" id="stat-blocked-link" onclick="switchTab('browse')"></a>
+    </div>
+
+    <div class="wheel-section">
+      <div class="wheel-wrap">
+        <div class="wheel-pointer"></div>
+        <canvas id="wheel-canvas" width="600" height="600"></canvas>
+      </div>
+      <div class="spin-actions">
+        <button class="btn-spin" id="spin-btn" onclick="startSpin()">Spin!</button>
+        <button class="btn-icon" onclick="shareWheel()" title="Share with a friend">🔗</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ BROWSE VIEW ═══ -->
+<div class="view" id="browse-view">
+  <div class="browse-top">
+    <div class="browse-search-row">
+      <input class="search-input" id="search-input" placeholder="Search dishes..." oninput="renderBrowse()">
+      <button class="btn-add-custom" onclick="openAddModal()">+ Add</button>
+    </div>
+    <div class="cat-pills" id="cat-pills"></div>
+  </div>
+  <div class="food-list-wrap" id="food-list"></div>
+</div>
+
+<!-- ═══ MATCH VIEW ═══ -->
+<div class="view" id="match-view">
+  <div class="match-layout">
+
+    <!-- Lobby: create or join -->
+    <div class="msub active" id="msub-lobby">
+      <div class="match-headline">👥 Match with a friend</div>
+      <div class="match-sub">Both swipe on food — see what you agree on</div>
+
+      <div class="match-action-card" onclick="createRoom()">
+        <div class="match-action-icon">🏠</div>
+        <div class="match-action-title">Create a room</div>
+        <div class="match-action-desc">Get a code to share with your friend</div>
+      </div>
+
+      <div class="match-divider">— or join one —</div>
+
+      <div class="match-input-row">
+        <input class="match-code-input" id="join-code-input" placeholder="ENTER CODE" maxlength="6"
+          oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')joinRoom()">
+        <button class="btn-primary" onclick="joinRoom()">Join</button>
+      </div>
+    </div>
+
+    <!-- Waiting: show code, wait for friend -->
+    <div class="msub" id="msub-waiting">
+      <div class="room-code-box">
+        <div class="room-code-label">Your room code</div>
+        <div class="room-code-big" id="room-code-display">------</div>
+        <button class="room-code-copy" onclick="copyRoomLink()">📋 Copy invite link</button>
+      </div>
+
+      <div class="players-row">
+        <div class="player-card you" id="pcard-me">
+          <div class="player-avatar" id="pavatar-me">🙂</div>
+          <div class="player-name" id="pname-me">You</div>
+          <div class="player-status">✓ Ready</div>
+        </div>
+        <div class="player-card" id="pcard-friend">
+          <div class="player-avatar">👤</div>
+          <div class="player-name">Friend</div>
+          <div class="player-status" id="pstatus-friend">Waiting…</div>
+        </div>
+      </div>
+
+      <div class="waiting-status">
+        <div class="waiting-dot" id="waiting-dot"></div>
+        <span id="waiting-text">Waiting for your friend to join…</span>
+      </div>
+
+      <div style="display:flex;gap:10px;width:100%;margin-top:20px">
+        <button class="btn-secondary" style="flex:1" onclick="openRoomMenu('foods')">📋 Menu</button>
+        <button class="btn-secondary" style="flex:1" onclick="leaveRoom()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Swiping -->
+    <div class="msub" id="msub-swiping">
+      <div class="swipe-progress" id="swipe-progress">Card 1 of 20</div>
+
+      <div class="swipe-card-wrap">
+        <div class="swipe-card" id="swipe-card">
+          <div class="like-stamp">LIKE ❤️</div>
+          <div class="nope-stamp">NOPE ✕</div>
+          <div class="swipe-emoji" id="swipe-emoji">🍕</div>
+          <div class="swipe-dish"  id="swipe-dish">Loading…</div>
+          <div class="swipe-rest"  id="swipe-rest"></div>
+        </div>
+      </div>
+
+      <div class="swipe-hint">← drag or tap buttons →</div>
+
+      <div class="swipe-btns">
+        <button class="swipe-btn pass"     onclick="doSwipe(false)" title="Pass">✕</button>
+        <button class="swipe-btn like-btn" onclick="doSwipe(true)"  title="Like">❤️</button>
+      </div>
+
+      <div class="friend-likes" id="friend-likes">
+        <span style="opacity:0.6">Waiting for friend's choices…</span>
+      </div>
+
+      <button class="btn-secondary" style="margin-top:16px;font-size:13px;padding:8px 18px" onclick="openRoomMenu('foods')">📋 View menu</button>
+    </div>
+
+    <!-- Match! -->
+    <div class="msub" id="msub-match">
+      <div class="match-confetti">🎉</div>
+      <div class="match-title">It's a Match!</div>
+      <div class="match-subtitle">You both want…</div>
+      <div class="match-food-card">
+        <span class="match-food-emoji" id="match-food-emoji">🍕</span>
+        <div class="match-food-dish"  id="match-food-dish"></div>
+        <div class="match-food-rest"  id="match-food-rest"></div>
+      </div>
+      <button class="btn-primary"   style="width:100%;margin-bottom:10px" onclick="resumeSwiping()">Keep swiping ❤️</button>
+      <button class="btn-secondary" style="width:100%" onclick="leaveRoom()">Done — order it! 🛍️</button>
+    </div>
+
+    <!-- All done / results -->
+    <div class="msub" id="msub-done">
+      <div class="nomatch-icon" id="done-icon">😅</div>
+      <div class="nomatch-title" id="done-title">All cards done!</div>
+      <div class="nomatch-desc"  id="done-desc">Here's what you both liked:</div>
+      <div class="nomatch-list"  id="done-list"></div>
+      <button class="btn-primary"   style="width:100%;margin-bottom:10px" onclick="leaveRoom()">Play again</button>
+      <button class="btn-secondary" style="width:100%" onclick="switchTab('spin')">Back to Spin</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ROOM MENU MODAL -->
+<div class="room-menu-overlay" id="room-menu-overlay" onclick="closeRoomMenu(event)">
+  <div class="room-menu-sheet">
+    <div class="room-menu-handle"></div>
+    <div class="room-menu-header">
+      <div class="room-menu-title" id="room-menu-title">Room Menu</div>
+      <button class="room-menu-close" onclick="closeRoomMenu()">✕</button>
+    </div>
+    <div class="room-menu-tabs">
+      <button class="rmt active" id="rmt-foods"   onclick="switchRoomTab('foods')">🍽️ Foods</button>
+      <button class="rmt"        id="rmt-blocked" onclick="switchRoomTab('blocked')">🚫 Blocked</button>
+      <button class="rmt"        id="rmt-add"     onclick="switchRoomTab('add')">➕ Add</button>
+    </div>
+    <div class="room-menu-body" id="room-menu-body"></div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="add-modal" onclick="closeModalOnBg(event)">
+  <div class="modal">
+    <div class="modal-title">Add custom food</div>
+    <div class="form-group">
+      <label class="form-label">Pick an emoji</label>
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Dish name</label>
+      <input class="form-input" id="input-dish" placeholder="e.g. Spicy Tuna Roll" maxlength="50">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Restaurant</label>
+      <input class="form-input" id="input-restaurant" placeholder="e.g. Hana Sushi" maxlength="50">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" style="flex:1" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-primary" style="flex:2" onclick="saveCustomFood()">Add food</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <button class="result-close" onclick="closeResult()" title="Close">✕</button>
+    <div class="result-label">Today you're eating</div>
+    <span class="result-emoji-big" id="result-emoji"></span>
+    <div class="result-dish-name" id="result-dish"></div>
+    <div class="result-rest-name" id="result-restaurant"></div>
+
+    <button class="result-confirm" onclick="closeResult()">Sounds delicious! 🎉</button>
+    <div class="result-row">
+      <button class="result-row-btn" onclick="closeResult(); setTimeout(startSpin, 80)">🔄 Spin again</button>
+      <button class="result-row-btn dislike" onclick="dislikeResult()">🚫 Not for me</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// FOOD DATABASE — 113 items
+// ══════════════════════════════════════════
+const FOOD_DB = [
+  // American
+  {id:'db001',emoji:'🍔',dish:'Classic Cheeseburger',restaurant:'Shake Shack',cat:'american'},
+  {id:'db002',emoji:'🍔',dish:'Smash Burger',restaurant:'Smashburger',cat:'american'},
+  {id:'db003',emoji:'🍔',dish:'Bacon BBQ Burger',restaurant:'Five Guys',cat:'american'},
+  {id:'db004',emoji:'🍗',dish:'Spicy Chicken Sandwich',restaurant:'Popeyes',cat:'american'},
+  {id:'db005',emoji:'🍗',dish:'Crispy Chicken Sandwich',restaurant:'Chick-fil-A',cat:'american'},
+  {id:'db006',emoji:'🍟',dish:'Loaded Cajun Fries',restaurant:'Five Guys',cat:'american'},
+  {id:'db007',emoji:'🥪',dish:'Club Sandwich',restaurant:'Local Deli',cat:'american'},
+  {id:'db008',emoji:'🥪',dish:'Philly Cheesesteak',restaurant:"Jersey Mike's",cat:'american'},
+  {id:'db009',emoji:'🌭',dish:'Gourmet Hot Dog',restaurant:'Local Stand',cat:'american'},
+  {id:'db010',emoji:'🥩',dish:'Steak Sandwich',restaurant:'Local Bistro',cat:'american'},
+  {id:'db011',emoji:'🍗',dish:'Buffalo Wings',restaurant:'Buffalo Wild Wings',cat:'american'},
+  {id:'db012',emoji:'🧀',dish:'Mac & Cheese',restaurant:'Local Kitchen',cat:'american'},
+  {id:'db013',emoji:'🫔',dish:'Breakfast Burrito',restaurant:'Local Cafe',cat:'american'},
+  {id:'db014',emoji:'🥓',dish:'BLT Sandwich',restaurant:'Local Deli',cat:'american'},
+  {id:'db015',emoji:'🥚',dish:'Eggs Benedict',restaurant:'Local Brunch',cat:'american'},
+  // Pizza
+  {id:'db016',emoji:'🍕',dish:'Pepperoni Pizza',restaurant:"Domino's",cat:'pizza'},
+  {id:'db017',emoji:'🍕',dish:'Margherita Pizza',restaurant:'Local Pizzeria',cat:'pizza'},
+  {id:'db018',emoji:'🍕',dish:'BBQ Chicken Pizza',restaurant:'CPK',cat:'pizza'},
+  {id:'db019',emoji:'🍕',dish:'Meat Lovers Pizza',restaurant:'Pizza Hut',cat:'pizza'},
+  {id:'db020',emoji:'🍕',dish:'Veggie Supreme Pizza',restaurant:'Local Pizzeria',cat:'pizza'},
+  {id:'db021',emoji:'🍕',dish:'White Truffle Pizza',restaurant:'Local Pizzeria',cat:'pizza'},
+  {id:'db022',emoji:'🍕',dish:'Buffalo Chicken Pizza',restaurant:'Local Pizzeria',cat:'pizza'},
+  {id:'db023',emoji:'🫓',dish:'Calzone',restaurant:'Local Pizzeria',cat:'pizza'},
+  {id:'db024',emoji:'🍕',dish:'Four Cheese Pizza',restaurant:'Local Pizzeria',cat:'pizza'},
+  {id:'db025',emoji:'🍕',dish:'Hawaiian Pizza',restaurant:'Pizza Hut',cat:'pizza'},
+  // Asian · Chinese
+  {id:'db026',emoji:'🥡',dish:'Orange Chicken',restaurant:'Panda Express',cat:'asian'},
+  {id:'db027',emoji:'🍜',dish:'Lo Mein',restaurant:'Local Chinese',cat:'asian'},
+  {id:'db028',emoji:'🥡',dish:'Fried Rice',restaurant:'Local Chinese',cat:'asian'},
+  {id:'db029',emoji:'🥡',dish:'Kung Pao Chicken',restaurant:'Local Chinese',cat:'asian'},
+  {id:'db030',emoji:'🥡',dish:"General Tso's Chicken",restaurant:'Local Chinese',cat:'asian'},
+  {id:'db031',emoji:'🍜',dish:'Beef with Broccoli',restaurant:'Local Chinese',cat:'asian'},
+  {id:'db032',emoji:'🥟',dish:'Steamed Dumplings',restaurant:'Dim Sum Kitchen',cat:'asian'},
+  {id:'db033',emoji:'🥟',dish:'Pan-Fried Potstickers',restaurant:'Dim Sum Kitchen',cat:'asian'},
+  {id:'db034',emoji:'🍲',dish:'Hot & Sour Soup',restaurant:'Local Chinese',cat:'asian'},
+  {id:'db035',emoji:'🥡',dish:'Sesame Chicken',restaurant:'Local Chinese',cat:'asian'},
+  // Asian · Japanese
+  {id:'db036',emoji:'🍣',dish:'Spicy Tuna Roll',restaurant:'Sushi Bar',cat:'asian'},
+  {id:'db037',emoji:'🍣',dish:'California Roll',restaurant:'Sushi Bar',cat:'asian'},
+  {id:'db038',emoji:'🍣',dish:'Salmon Sashimi',restaurant:'Sushi Bar',cat:'asian'},
+  {id:'db039',emoji:'🍱',dish:'Chicken Teriyaki Bento',restaurant:'Local Japanese',cat:'asian'},
+  {id:'db040',emoji:'🍜',dish:'Tonkotsu Ramen',restaurant:'Ramen House',cat:'asian'},
+  {id:'db041',emoji:'🍜',dish:'Spicy Miso Ramen',restaurant:'Ramen House',cat:'asian'},
+  {id:'db042',emoji:'🥟',dish:'Gyoza',restaurant:'Local Japanese',cat:'asian'},
+  {id:'db043',emoji:'🍱',dish:'Katsu Curry',restaurant:'Local Japanese',cat:'asian'},
+  {id:'db044',emoji:'🍣',dish:'Dragon Roll',restaurant:'Sushi Bar',cat:'asian'},
+  {id:'db045',emoji:'🍱',dish:'Chirashi Bowl',restaurant:'Sushi Bar',cat:'asian'},
+  // Asian · Thai
+  {id:'db046',emoji:'🍜',dish:'Pad Thai',restaurant:'Thai Kitchen',cat:'asian'},
+  {id:'db047',emoji:'🍛',dish:'Green Curry',restaurant:'Thai Kitchen',cat:'asian'},
+  {id:'db048',emoji:'🍛',dish:'Massaman Curry',restaurant:'Thai Kitchen',cat:'asian'},
+  {id:'db049',emoji:'🍜',dish:'Pad See Ew',restaurant:'Thai Kitchen',cat:'asian'},
+  {id:'db050',emoji:'🍛',dish:'Thai Basil Chicken',restaurant:'Thai Kitchen',cat:'asian'},
+  {id:'db051',emoji:'🥗',dish:'Papaya Salad',restaurant:'Thai Kitchen',cat:'asian'},
+  // Asian · Korean
+  {id:'db052',emoji:'🥩',dish:'Bulgogi Bowl',restaurant:'Korean BBQ',cat:'asian'},
+  {id:'db053',emoji:'🍱',dish:'Bibimbap',restaurant:'Korean Kitchen',cat:'asian'},
+  {id:'db054',emoji:'🍗',dish:'Korean Fried Chicken',restaurant:'Korean Kitchen',cat:'asian'},
+  {id:'db055',emoji:'🌯',dish:'Bulgogi Wrap',restaurant:'Korean Kitchen',cat:'asian'},
+  {id:'db056',emoji:'🥘',dish:'Sundubu Jjigae',restaurant:'Korean Kitchen',cat:'asian'},
+  // Asian · Vietnamese
+  {id:'db057',emoji:'🍜',dish:'Beef Pho',restaurant:'Pho House',cat:'asian'},
+  {id:'db058',emoji:'🥖',dish:'Banh Mi',restaurant:'Banh Mi Shop',cat:'asian'},
+  {id:'db059',emoji:'🥗',dish:'Fresh Spring Rolls',restaurant:'Vietnamese Kitchen',cat:'asian'},
+  {id:'db060',emoji:'🍜',dish:'Bun Bo Hue',restaurant:'Pho House',cat:'asian'},
+  // Mexican
+  {id:'db061',emoji:'🌯',dish:'Chicken Burrito',restaurant:'Chipotle',cat:'mexican'},
+  {id:'db062',emoji:'🌯',dish:'Carnitas Burrito Bowl',restaurant:'Chipotle',cat:'mexican'},
+  {id:'db063',emoji:'🌮',dish:'Street Tacos',restaurant:'Local Mexican',cat:'mexican'},
+  {id:'db064',emoji:'🌮',dish:'Al Pastor Tacos',restaurant:'Local Mexican',cat:'mexican'},
+  {id:'db065',emoji:'🌮',dish:'Birria Tacos',restaurant:'Local Mexican',cat:'mexican'},
+  {id:'db066',emoji:'🌮',dish:'Fish Tacos',restaurant:'Local Mexican',cat:'mexican'},
+  {id:'db067',emoji:'🥙',dish:'Quesadilla',restaurant:'Chipotle',cat:'mexican'},
+  {id:'db068',emoji:'🫓',dish:'Loaded Nachos',restaurant:'Local Mexican',cat:'mexican'},
+  {id:'db069',emoji:'🌯',dish:'Veggie Burrito',restaurant:'Chipotle',cat:'mexican'},
+  {id:'db070',emoji:'🥗',dish:'Mexican Street Corn Salad',restaurant:'Local Mexican',cat:'mexican'},
+  {id:'db071',emoji:'🌯',dish:'Steak Burrito Bowl',restaurant:'Qdoba',cat:'mexican'},
+  // Indian
+  {id:'db072',emoji:'🍛',dish:'Butter Chicken',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db073',emoji:'🍛',dish:'Chicken Tikka Masala',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db074',emoji:'🍛',dish:'Chicken Biryani',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db075',emoji:'🍛',dish:'Lamb Rogan Josh',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db076',emoji:'🥘',dish:'Palak Paneer',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db077',emoji:'🍛',dish:'Dal Makhani',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db078',emoji:'🫓',dish:'Garlic Naan',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db079',emoji:'🧆',dish:'Samosa',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db080',emoji:'🍛',dish:'Chana Masala',restaurant:'Indian Kitchen',cat:'indian'},
+  {id:'db081',emoji:'🍛',dish:'Shrimp Masala',restaurant:'Indian Kitchen',cat:'indian'},
+  // Mediterranean
+  {id:'db082',emoji:'🥙',dish:'Chicken Shawarma',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  {id:'db083',emoji:'🥙',dish:'Lamb Shawarma',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  {id:'db084',emoji:'🥙',dish:'Falafel Wrap',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  {id:'db085',emoji:'🥗',dish:'Greek Salad',restaurant:'Greek Kitchen',cat:'mediterranean'},
+  {id:'db086',emoji:'🥙',dish:'Chicken Gyro',restaurant:'Greek Kitchen',cat:'mediterranean'},
+  {id:'db087',emoji:'🫓',dish:'Hummus & Pita',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  {id:'db088',emoji:'🥩',dish:'Lamb Kebab Plate',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  {id:'db089',emoji:'🥗',dish:'Tabbouleh',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  {id:'db090',emoji:'🍱',dish:'Mezze Platter',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  {id:'db091',emoji:'🍛',dish:'Moroccan Chicken',restaurant:'Mediterranean Grill',cat:'mediterranean'},
+  // Healthy
+  {id:'db092',emoji:'🥗',dish:'Caesar Salad',restaurant:'Sweetgreen',cat:'healthy'},
+  {id:'db093',emoji:'🥗',dish:'Harvest Bowl',restaurant:'Sweetgreen',cat:'healthy'},
+  {id:'db094',emoji:'🥗',dish:'Cobb Salad',restaurant:'Local Cafe',cat:'healthy'},
+  {id:'db095',emoji:'🥗',dish:'Poke Bowl',restaurant:'Poke Bar',cat:'healthy'},
+  {id:'db096',emoji:'🥗',dish:'Grain & Veggie Bowl',restaurant:'Sweetgreen',cat:'healthy'},
+  {id:'db097',emoji:'🥗',dish:'Salmon Poke Bowl',restaurant:'Poke Bar',cat:'healthy'},
+  {id:'db098',emoji:'🥙',dish:'Turkey Avocado Wrap',restaurant:'Local Cafe',cat:'healthy'},
+  {id:'db099',emoji:'🥗',dish:'Kale & Quinoa Salad',restaurant:'Local Cafe',cat:'healthy'},
+  {id:'db100',emoji:'🍱',dish:'Protein Box',restaurant:'Local Cafe',cat:'healthy'},
+  // Italian
+  {id:'db101',emoji:'🍝',dish:'Spaghetti Carbonara',restaurant:'Local Italian',cat:'italian'},
+  {id:'db102',emoji:'🍝',dish:'Fettuccine Alfredo',restaurant:'Local Italian',cat:'italian'},
+  {id:'db103',emoji:'🍝',dish:'Penne Arrabbiata',restaurant:'Local Italian',cat:'italian'},
+  {id:'db104',emoji:'🍗',dish:'Chicken Parmesan',restaurant:'Olive Garden',cat:'italian'},
+  {id:'db105',emoji:'🥗',dish:'Caprese Salad',restaurant:'Local Italian',cat:'italian'},
+  {id:'db106',emoji:'🍲',dish:'Minestrone Soup',restaurant:'Local Italian',cat:'italian'},
+  {id:'db107',emoji:'🍝',dish:'Cacio e Pepe',restaurant:'Local Italian',cat:'italian'},
+  {id:'db108',emoji:'🍝',dish:'Bolognese',restaurant:'Local Italian',cat:'italian'},
+  // BBQ
+  {id:'db109',emoji:'🥩',dish:'Brisket Plate',restaurant:'Local BBQ',cat:'bbq'},
+  {id:'db110',emoji:'🍖',dish:'Pulled Pork Sandwich',restaurant:'Local BBQ',cat:'bbq'},
+  {id:'db111',emoji:'🍗',dish:'Smoked Chicken',restaurant:'Local BBQ',cat:'bbq'},
+  {id:'db112',emoji:'🍖',dish:'Baby Back Ribs',restaurant:'Local BBQ',cat:'bbq'},
+  {id:'db113',emoji:'🥩',dish:'Burnt Ends',restaurant:'Local BBQ',cat:'bbq'},
+];
+
+const CATEGORIES = [
+  {id:'all',label:'All 🍽️'},
+  {id:'american',label:'🍔 American'},
+  {id:'pizza',label:'🍕 Pizza'},
+  {id:'asian',label:'🥢 Asian'},
+  {id:'mexican',label:'🌮 Mexican'},
+  {id:'indian',label:'🍛 Indian'},
+  {id:'mediterranean',label:'🥙 Mediterranean'},
+  {id:'healthy',label:'🥗 Healthy'},
+  {id:'italian',label:'🍝 Italian'},
+  {id:'bbq',label:'🔥 BBQ'},
+  {id:'custom',label:'✨ My Adds'},
+  {id:'blocked',label:'🚫 Blocked'},
+];
+
+const CAT_LABEL = {american:'American',pizza:'Pizza',asian:'Asian',mexican:'Mexican',indian:'Indian',mediterranean:'Mediterranean',healthy:'Healthy',italian:'Italian',bbq:'BBQ',custom:'My Adds'};
+
+const SLICE_COLORS = ['#FF6B6B','#FFD93D','#6BCB77','#4D96FF','#FF9F43','#C77DFF','#00D2D3','#FF6BAA','#A8E063','#FF8E53','#5FC3E4','#FFB347','#FC5C65','#45AAF2','#26DE81','#FED330','#A55EEA','#2BCBBA'];
+
+const FOOD_EMOJIS = ['🍕','🍔','🌮','🌯','🍜','🍣','🍱','🥗','🍛','🥙','🍝','🥪','🍗','🥩','🍖','🍤','🥡','🍲','🥘','🍚','🍞','🧆','🥟','🥖','🫔','🌭','🥓','🫓','🧀','🥚'];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let blockedIds  = new Set();
+let customFoods = [];
+let isSpinning  = false;
+let currentAngle = 0;
+let activeCat   = 'all';
+let isGuestMode = false;
+let guestItems  = [];
+let lastResult  = null;   // food object of last spin result
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = location.hash.slice(1);
+  if (hash.startsWith('share=')) { loadGuestMode(hash.slice(6)); return; }
+  loadFromStorage();
+  buildCatPills();
+  renderBrowse();
+  renderStats();
+  buildEmojiGrid();
+  refreshVisualItems();
+  drawWheel();
+
+  // Handle ?room=XXXXXX join link
+  const urlParams = new URLSearchParams(location.search);
+  const roomParam = urlParams.get('room');
+  if (roomParam) {
+    switchTab('match');
+    const inp = document.getElementById('join-code-input');
+    if (inp) inp.value = roomParam.toUpperCase();
+    setTimeout(() => joinRoom(roomParam.toUpperCase()), 400);
+  }
+});
+
+function allFoods() { return [...FOOD_DB, ...customFoods]; }
+function activeItems() { return allFoods().filter(f => !blockedIds.has(f.id)); }
+
+function loadFromStorage() {
+  try {
+    blockedIds  = new Set(JSON.parse(localStorage.getItem('wte_blocked') || '[]'));
+    customFoods = JSON.parse(localStorage.getItem('wte_custom') || '[]');
+    const valid = new Set(allFoods().map(f => f.id));
+    blockedIds = new Set([...blockedIds].filter(id => valid.has(id)));
+  } catch(e) { blockedIds = new Set(); customFoods = []; }
+}
+
+function saveToStorage() {
+  localStorage.setItem('wte_blocked', JSON.stringify([...blockedIds]));
+  localStorage.setItem('wte_custom',  JSON.stringify(customFoods));
+}
+
+// ══════════════════════════════════════════
+// GUEST MODE
+// ══════════════════════════════════════════
+function loadGuestMode(encoded) {
+  try {
+    const data = JSON.parse(atob(encoded));
+    guestItems  = data.items || [];
+    isGuestMode = true;
+    document.body.classList.add('guest-mode');
+    document.getElementById('share-banner').textContent = `🎡 Spin for ${data.name || 'your friend'}!`;
+    document.getElementById('share-banner').classList.add('visible');
+    document.querySelector('.btn-icon').style.display = 'none';
+    buildEmojiGrid();
+    renderStats();
+    refreshVisualItems();
+    drawWheel();
+  } catch(e) { showToast('Invalid share link 😕'); }
+}
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) =>
+    t.classList.toggle('active',
+      (tab==='spin'&&i===0)||(tab==='browse'&&i===1)||(tab==='match'&&i===2)));
+  document.getElementById('spin-view').classList.toggle('active',   tab==='spin');
+  document.getElementById('browse-view').classList.toggle('active', tab==='browse');
+  document.getElementById('match-view').classList.toggle('active',  tab==='match');
+}
+
+// ══════════════════════════════════════════
+// STATS LINE
+// ══════════════════════════════════════════
+function renderStats() {
+  const blocked = isGuestMode ? 0 : blockedIds.size;
+  const blockedEl = document.getElementById('stat-blocked-link');
+  if (blockedEl) {
+    blockedEl.textContent = blocked > 0 ? `${blocked} food${blocked !== 1 ? 's' : ''} blocked — manage` : '';
+    blockedEl.style.display = blocked > 0 ? '' : 'none';
+  }
+}
+
+// ══════════════════════════════════════════
+// BROWSE VIEW
+// ══════════════════════════════════════════
+function buildCatPills() {
+  document.getElementById('cat-pills').innerHTML = CATEGORIES.map(c =>
+    `<button class="pill ${c.id===activeCat?'active':''}" onclick="setCat('${c.id}')">${c.label}</button>`
+  ).join('');
+}
+function setCat(id) { activeCat = id; buildCatPills(); renderBrowse(); }
+
+function renderBrowse() {
+  const query = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const list  = document.getElementById('food-list');
+  const foods = allFoods();
+
+  // Split active / blocked
+  let showActive  = [];
+  let showBlocked = [];
+
+  foods.forEach(f => {
+    if (activeCat === 'blocked') { if (blockedIds.has(f.id)) showBlocked.push(f); return; }
+    if (activeCat === 'custom'  && f.cat !== 'custom') return;
+    if (activeCat !== 'all' && activeCat !== 'custom' && activeCat !== 'blocked' && f.cat !== activeCat) return;
+    if (query && !f.dish.toLowerCase().includes(query) && !f.restaurant.toLowerCase().includes(query)) return;
+    if (blockedIds.has(f.id)) showBlocked.push(f);
+    else showActive.push(f);
+  });
+
+  if (!showActive.length && !showBlocked.length) {
+    list.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--muted);font-size:14px;">No results</div>`;
+    return;
+  }
+
+  let html = '';
+
+  // Group active items by category when browsing "All" with no search
+  if (activeCat === 'all' && !query) {
+    const groups = {};
+    showActive.forEach(f => { (groups[f.cat] = groups[f.cat]||[]).push(f); });
+    for (const cat of Object.keys(groups)) {
+      html += `<span class="category-label">${CAT_LABEL[cat]||cat}</span>`;
+      html += groups[cat].map(f => rowHTML(f, false)).join('');
+    }
+  } else {
+    html = showActive.map(f => rowHTML(f, false)).join('');
+  }
+
+  // Blocked section
+  if (showBlocked.length && activeCat !== 'blocked') {
+    html += `<div class="blocked-toggle" onclick="setCat('blocked')">🚫 ${showBlocked.length} blocked food${showBlocked.length!==1?'s':''} — tap to manage</div>`;
+  }
+  if (activeCat === 'blocked') {
+    if (showBlocked.length) html = `<span class="category-label">Blocked foods — tap ↩ to restore</span>` + showBlocked.map(f => rowHTML(f, true)).join('');
+    else html = `<div style="text-align:center;padding:48px 20px;color:var(--muted);font-size:14px;">No blocked foods 🎉</div>`;
+  }
+
+  list.innerHTML = html;
+}
+
+function rowHTML(f, isBlocked) {
+  return `
+    <div class="food-row ${isBlocked?'blocked':''}">
+      <div class="food-row-emoji">${f.emoji}</div>
+      <div class="food-row-text">
+        <div class="food-row-dish">${esc(f.dish)}</div>
+        <div class="food-row-rest">${esc(f.restaurant)}</div>
+      </div>
+      <button class="row-block-btn ${isBlocked?'blocked':''}"
+        onclick="toggleBlock('${f.id}')"
+        title="${isBlocked?'Restore food':'Block this food'}">
+        ${isBlocked ? '↩' : '✕'}
+      </button>
+    </div>`;
+}
+
+function toggleBlock(id) {
+  if (blockedIds.has(id)) {
+    blockedIds.delete(id);
+    showToast('Food restored ✓');
+  } else {
+    blockedIds.add(id);
+    showToast('Blocked 🚫 — spin again anytime');
+  }
+  saveToStorage();
+  renderBrowse();
+  renderStats();
+}
+
+// ══════════════════════════════════════════
+// ADD CUSTOM FOOD
+// ══════════════════════════════════════════
+let selectedEmoji = '🍕';
+
+function buildEmojiGrid() {
+  document.getElementById('emoji-grid').innerHTML = FOOD_EMOJIS.map(e =>
+    `<button class="emoji-btn ${e===selectedEmoji?'selected':''}" onclick="selectEmoji('${e}',this)">${e}</button>`
+  ).join('');
+}
+function selectEmoji(emoji, btn) {
+  selectedEmoji = emoji;
+  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function openAddModal() {
+  selectedEmoji = '🍕';
+  document.getElementById('input-dish').value = '';
+  document.getElementById('input-restaurant').value = '';
+  buildEmojiGrid();
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('input-dish').focus(), 100);
+}
+function closeAddModal() { document.getElementById('add-modal').classList.remove('open'); }
+function closeModalOnBg(e) { if (e.target===e.currentTarget) closeAddModal(); }
+function saveCustomFood() {
+  const dish = document.getElementById('input-dish').value.trim();
+  const restaurant = document.getElementById('input-restaurant').value.trim();
+  if (!dish) { document.getElementById('input-dish').focus(); return; }
+  if (!restaurant) { document.getElementById('input-restaurant').focus(); return; }
+  const food = {id:'c'+Date.now(), emoji:selectedEmoji, dish, restaurant, cat:'custom'};
+  customFoods.push(food);
+  saveToStorage();
+  closeAddModal();
+  renderBrowse();
+  renderStats();
+  showToast(`${selectedEmoji} ${dish} added!`);
+}
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') { closeAddModal(); closeResult(); closeRoomMenu(); }
+  if (e.key==='Enter' && document.getElementById('add-modal').classList.contains('open')) saveCustomFood();
+  // Arrow keys to swipe during Match
+  if (e.key==='ArrowRight' && swipingActive) doSwipe(true);
+  if (e.key==='ArrowLeft'  && swipingActive) doSwipe(false);
+});
+
+// ══════════════════════════════════════════
+// WHEEL CANVAS
+// ══════════════════════════════════════════
+const WHEEL_COLORS = ['#FFB3B3','#FFCBA4','#FFE4A3','#B5EAD7','#9BD8E8','#C5B3E6','#FFB3D4','#A8E6CF'];
+let visualItems  = [];   // 8 foods shown on wheel each spin
+
+function refreshVisualItems() {
+  const pool = isGuestMode ? guestItems : activeItems();
+  if (!pool.length) { visualItems = []; return; }
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  visualItems = shuffled.slice(0, Math.min(8, shuffled.length));
+}
+
+function drawWheel() {
+  if (!visualItems.length) refreshVisualItems();
+  renderWheel(visualItems, currentAngle);
+}
+
+function renderWheel(items, angle) {
+  const canvas = document.getElementById('wheel-canvas');
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2, r = W / 2 - 4;
+
+  ctx.clearRect(0, 0, W, H);
+
+  if (!items.length) {
+    // Empty state
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#F0EDE8'; ctx.fill();
+    ctx.font = '56px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🍽️', cx, cy - 20);
+    ctx.font = 'bold 24px Inter,sans-serif'; ctx.fillStyle = '#C0BDB8';
+    ctx.fillText('Nothing to spin', cx, cx + 46);
+    return;
+  }
+
+  const n = items.length;
+  const slice = (Math.PI * 2) / n;
+
+  items.forEach((item, i) => {
+    const start = angle + i * slice - Math.PI / 2;
+    const end   = start + slice;
+    const mid   = start + slice / 2;
+
+    // Slice fill
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+    ctx.fill();
+
+    // Divider
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Emoji only — centered in slice
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(mid);
+    ctx.font = '38px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.emoji, r * 0.62, 0);
+    ctx.restore();
+  });
+
+  // Outer ring stroke
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 4; ctx.stroke();
+
+  // Center cap
+  ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+  ctx.fillStyle = 'white'; ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🎡', cx, cy);
+}
+
+// ══════════════════════════════════════════
+// SPIN ANIMATION
+// ══════════════════════════════════════════
+function startSpin() {
+  const pool = isGuestMode ? guestItems : activeItems();
+  if (!pool.length) { showToast('All foods blocked! Restore some in Browse.'); return; }
+  if (isSpinning) return;
+
+  isSpinning = true;
+  document.getElementById('spin-btn').disabled = true;
+
+  // Fresh set of 8 for this spin
+  refreshVisualItems();
+  renderWheel(visualItems, currentAngle);
+
+  const n          = visualItems.length;
+  const slice      = (Math.PI * 2) / n;
+  const winnerIdx  = Math.floor(Math.random() * n);
+  const winner     = visualItems[winnerIdx];
+
+  // Aim pointer (top = -π/2) at center of winning slice
+  const winnerMid  = winnerIdx * slice + slice / 2;
+  const extraSpins = (2 + Math.random() * 1) * Math.PI * 2;   // 2–3 full rotations
+  const target     = currentAngle + extraSpins
+                     + ((Math.PI * 2) - ((currentAngle % (Math.PI * 2)) + winnerMid))
+                     + Math.PI * 2;
+
+  const from = currentAngle;
+  const dur  = 900 + Math.random() * 200;   // 0.9 – 1.1 s
+  const t0   = performance.now();
+
+  function animate(now) {
+    const p = Math.min((now - t0) / dur, 1);
+    currentAngle = from + (target - from) * easeOut(p);
+    renderWheel(visualItems, currentAngle);
+    if (p < 1) { requestAnimationFrame(animate); return; }
+    isSpinning = false;
+    document.getElementById('spin-btn').disabled = false;
+    lastResult = winner;
+    showResult(winner);
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+// ══════════════════════════════════════════
+// RESULT
+// ══════════════════════════════════════════
+function showResult(item) {
+  document.getElementById('result-emoji').textContent      = item.emoji;
+  document.getElementById('result-dish').textContent       = item.dish;
+  document.getElementById('result-restaurant').textContent = item.restaurant;
+  document.getElementById('result-overlay').classList.add('open');
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.remove('open');
+}
+
+function dislikeResult() {
+  if (!lastResult) return;
+  blockedIds.add(lastResult.id);
+  saveToStorage();
+  renderStats();
+  closeResult();
+  showToast(`${lastResult.emoji} Blocked — spinning again…`);
+  setTimeout(startSpin, 500);
+}
+
+// ══════════════════════════════════════════
+// SHARE
+// ══════════════════════════════════════════
+function shareWheel() {
+  const items = activeItems();
+  if (!items.length) return;
+  const data = { name: 'you', items: items.map(f => ({emoji:f.emoji,dish:f.dish,restaurant:f.restaurant})) };
+  const url  = `${location.origin}${location.pathname}#share=${btoa(JSON.stringify(data))}`;
+  navigator.clipboard.writeText(url)
+    .then(() => showToast('🔗 Share link copied!'))
+    .catch(() => prompt('Copy this share link:', url));
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════
+// FIREBASE CONFIG
+// ⚠️  Replace ALL values below with yours
+//     from Firebase Console → Project Settings → Your apps → </> Web
+// ══════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyAQ5OtWz9K85uX3hMNup6181FwyrMqQlEk",
+  authDomain:        "whattoeat-74e0f.firebaseapp.com",
+  databaseURL:       "https://whattoeat-74e0f-default-rtdb.firebaseio.com",
+  projectId:         "whattoeat-74e0f",
+  storageBucket:     "whattoeat-74e0f.firebasestorage.app",
+  messagingSenderId: "261773516273",
+  appId:             "1:261773516273:web:e3138946d20a49db4cf850"
+};
+
+let db = null;
+let firebaseReady = false;
+
+function initFirebase() {
+  if (firebaseReady) return true;
+  if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+    showToast('⚠️ Paste your Firebase config first!');
+    return false;
+  }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    firebaseReady = true;
+    return true;
+  } catch(e) {
+    showToast('Firebase error — check config');
+    console.error(e);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════
+// MATCH STATE
+// ══════════════════════════════════════════
+let matchRoomId    = null;
+let matchRole      = null;   // 'host' | 'guest'
+let matchFoods     = [];
+let matchIndex     = 0;
+let mySwipes       = {};     // {foodId: true|false}
+let theirSwipes    = {};
+let foundMatches   = [];
+let shownMatchIds  = new Set();
+let matchListeners = [];     // Firebase refs to .off() on leave
+let swipingActive  = false;
+let roomBlocked    = new Set(); // food IDs blocked only in this room session
+
+// ══════════════════════════════════════════
+// ROOM ID
+// ══════════════════════════════════════════
+function genRoomId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id = '';
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
+// ══════════════════════════════════════════
+// COMBINED FOOD POOL
+// ══════════════════════════════════════════
+function buildCombinedPool(hostPrefs, guestPrefs) {
+  const hostBlocked  = new Set(hostPrefs?.blockedIds  || []);
+  const guestBlocked = new Set(guestPrefs?.blockedIds || []);
+  const hostCustom   = hostPrefs?.customFoods  || [];
+  const guestCustom  = guestPrefs?.customFoods || [];
+
+  const seen = new Set();
+  const pool = [];
+
+  const dedupeKey = f => `${f.dish}|${f.restaurant}`.toLowerCase();
+
+  // FOOD_DB: not blocked by either
+  for (const f of FOOD_DB) {
+    if (!hostBlocked.has(f.id) && !guestBlocked.has(f.id)) {
+      seen.add(f.id);
+      pool.push({...f, _source: 'db'});
+    }
+  }
+
+  // Host's custom foods: not blocked by guest
+  for (const f of hostCustom) {
+    if (!guestBlocked.has(f.id) && !seen.has(f.id)) {
+      if (!pool.some(p => dedupeKey(p) === dedupeKey(f))) {
+        seen.add(f.id);
+        pool.push({...f, _source: 'host'});
+      }
+    }
+  }
+
+  // Guest's custom foods: not blocked by host
+  for (const f of guestCustom) {
+    if (!hostBlocked.has(f.id) && !seen.has(f.id)) {
+      if (!pool.some(p => dedupeKey(p) === dedupeKey(f))) {
+        seen.add(f.id);
+        pool.push({...f, _source: 'guest'});
+      }
+    }
+  }
+
+  // Shuffle
+  return pool.sort(() => Math.random() - 0.5);
+}
+
+// ══════════════════════════════════════════
+// CREATE ROOM (host)
+// ══════════════════════════════════════════
+async function createRoom() {
+  if (!initFirebase()) return;
+
+  matchRoomId = genRoomId();
+  matchRole   = 'host';
+
+  const myPrefs = { blockedIds: [...blockedIds], customFoods };
+
+  try {
+    await db.ref(`rooms/${matchRoomId}`).set({
+      status:    'waiting',
+      createdAt: Date.now(),
+      host:      { prefs: myPrefs, ready: true },
+      guest:     null
+    });
+
+    document.getElementById('room-code-display').textContent = matchRoomId;
+    document.getElementById('pname-me').textContent = 'You (host)';
+    showMsub('msub-waiting');
+
+    // Watch for guest joining
+    const guestRef = db.ref(`rooms/${matchRoomId}/guest`);
+    matchListeners.push(guestRef);
+    guestRef.on('value', snap => {
+      const g = snap.val();
+      if (g && g.ready) {
+        document.getElementById('pstatus-friend').textContent = '✓ Joined!';
+        document.getElementById('pcard-friend').classList.add('you');
+        document.getElementById('waiting-dot').classList.add('connected');
+        document.getElementById('waiting-text').textContent = 'Building your menu…';
+        hostStartGame();
+      }
+    });
+
+    // Watch for room closure (friend left)
+    const statusRefH = db.ref(`rooms/${matchRoomId}/status`);
+    matchListeners.push(statusRefH);
+    statusRefH.on('value', snap => {
+      if (snap.val() === 'closed' && matchRoomId) onFriendLeft();
+    });
+
+  } catch(e) {
+    showToast('Error creating room 😕');
+    console.error(e);
+  }
+}
+
+// Host reads both prefs, computes pool, writes foods, starts game
+async function hostStartGame() {
+  if (matchRole !== 'host') return;
+  try {
+    const snap = await db.ref(`rooms/${matchRoomId}`).once('value');
+    const room = snap.val();
+    if (!room?.guest) return;
+
+    const hostPrefs  = room.host?.prefs  || {};
+    const guestPrefs = room.guest?.prefs || {};
+    const pool = buildCombinedPool(hostPrefs, guestPrefs);
+    await db.ref(`rooms/${matchRoomId}/foods`).set(pool);
+    await db.ref(`rooms/${matchRoomId}/status`).set('active');
+
+    beginSwiping(pool);
+  } catch(e) { console.error('hostStartGame error', e); }
+}
+
+// ══════════════════════════════════════════
+// JOIN ROOM (guest)
+// ══════════════════════════════════════════
+async function joinRoom(codeOverride) {
+  if (!initFirebase()) return;
+
+  const code = (codeOverride || document.getElementById('join-code-input')?.value || '')
+    .toUpperCase().replace(/\s/g,'');
+
+  if (code.length !== 6) { showToast('Enter a 6-character code'); return; }
+
+  try {
+    const snap = await db.ref(`rooms/${code}`).once('value');
+    const room = snap.val();
+
+    if (!room)                  { showToast('Room not found 🤔'); return; }
+    if (room.status !== 'waiting') { showToast('Room is already active or closed'); return; }
+    if (room.guest?.ready)      { showToast('Room is full!'); return; }
+
+    matchRoomId = code;
+    matchRole   = 'guest';
+
+    const myPrefs = { blockedIds: [...blockedIds], customFoods };
+    await db.ref(`rooms/${code}/guest`).set({ prefs: myPrefs, ready: true });
+
+    document.getElementById('room-code-display').textContent = matchRoomId;
+    document.getElementById('pname-me').textContent   = 'You (guest)';
+    document.getElementById('pstatus-friend').textContent = '✓ Hosting';
+    document.getElementById('pcard-friend').classList.add('you');
+    document.getElementById('waiting-dot').classList.add('connected');
+    document.getElementById('waiting-text').textContent = 'Host is building your menu…';
+    showMsub('msub-waiting');
+
+    // Wait for host to write the foods
+    const foodsRef = db.ref(`rooms/${code}/foods`);
+    matchListeners.push(foodsRef);
+    foodsRef.on('value', snap => {
+      const foods = snap.val();
+      if (foods && !swipingActive) beginSwiping(foods);
+    });
+
+    // Watch for room closure (host left)
+    const statusRefG = db.ref(`rooms/${code}/status`);
+    matchListeners.push(statusRefG);
+    statusRefG.on('value', snap => {
+      if (snap.val() === 'closed' && matchRoomId) onFriendLeft();
+    });
+
+  } catch(e) {
+    showToast('Error joining room 😕');
+    console.error(e);
+  }
+}
+
+// ══════════════════════════════════════════
+// BEGIN SWIPING
+// ══════════════════════════════════════════
+function beginSwiping(foodsArray) {
+  if (swipingActive) return;
+  swipingActive  = true;
+  matchFoods     = foodsArray;
+  matchIndex     = 0;
+  mySwipes       = {};
+  theirSwipes    = {};
+  foundMatches   = [];
+  shownMatchIds  = new Set();
+
+  // Real-time listener for their swipes
+  const theirRole = matchRole === 'host' ? 'guest' : 'host';
+  const swipesRef = db.ref(`rooms/${matchRoomId}/swipes/${theirRole}`);
+  matchListeners.push(swipesRef);
+  swipesRef.on('value', snap => {
+    theirSwipes = snap.val() || {};
+    checkIncomingMatches();
+    renderFriendLikes();
+  });
+
+  showMsub('msub-swiping');
+  renderSwipeCard();
+  setupDrag();
+}
+
+function renderSwipeCard() {
+  // Skip room-blocked foods
+  while (matchIndex < matchFoods.length && roomBlocked.has(matchFoods[matchIndex].id)) {
+    matchIndex++;
+  }
+  if (matchIndex >= matchFoods.length) { endSwiping(); return; }
+  const f = matchFoods[matchIndex];
+  document.getElementById('swipe-emoji').textContent = f.emoji;
+  document.getElementById('swipe-dish').textContent  = f.dish;
+  document.getElementById('swipe-rest').textContent  = f.restaurant;
+  document.getElementById('swipe-progress').textContent =
+    `Card ${matchIndex + 1} of ${matchFoods.length}`;
+
+  const card = document.getElementById('swipe-card');
+  card.classList.remove('fly-left','fly-right','show-like','show-nope');
+  card.style.transform = '';
+}
+
+function doSwipe(liked) {
+  if (matchIndex >= matchFoods.length || !swipingActive) return;
+  const food = matchFoods[matchIndex];
+  const card = document.getElementById('swipe-card');
+
+  card.classList.add(liked ? 'fly-right' : 'fly-left');
+  card.style.transform = '';
+
+  mySwipes[food.id] = liked;
+  if (liked) {
+    db.ref(`rooms/${matchRoomId}/swipes/${matchRole}/${food.id}`).set(true);
+    // Immediate match check (their swipe already recorded)
+    if (theirSwipes[food.id] === true && !shownMatchIds.has(food.id)) {
+      shownMatchIds.add(food.id);
+      foundMatches.push(food);
+      setTimeout(() => showMatch(food), 380);
+      matchIndex++;
+      return;
+    }
+  }
+
+  matchIndex++;
+  setTimeout(renderSwipeCard, 370);
+}
+
+// Called when their swipes update live
+function checkIncomingMatches() {
+  for (const [id, liked] of Object.entries(mySwipes)) {
+    if (liked && theirSwipes[id] === true && !shownMatchIds.has(id)) {
+      const food = matchFoods.find(f => f.id === id);
+      if (food) {
+        shownMatchIds.add(id);
+        foundMatches.push(food);
+        showMatch(food);
+      }
+    }
+  }
+}
+
+function showMatch(food) {
+  document.getElementById('match-food-emoji').textContent = food.emoji;
+  document.getElementById('match-food-dish').textContent  = food.dish;
+  document.getElementById('match-food-rest').textContent  = food.restaurant;
+  showMsub('msub-match');
+}
+
+function resumeSwiping() {
+  showMsub('msub-swiping');
+  renderSwipeCard();
+}
+
+function renderFriendLikes() {
+  const likes = Object.entries(theirSwipes)
+    .filter(([,v]) => v === true)
+    .map(([id]) => matchFoods.find(f => f.id === id))
+    .filter(Boolean);
+
+  const el = document.getElementById('friend-likes');
+  if (!el) return;
+  if (!likes.length) {
+    el.innerHTML = '<span style="opacity:0.6">Waiting for friend\'s choices…</span>';
+    return;
+  }
+  el.innerHTML = `<div style="margin-bottom:4px">Friend liked:</div>
+    <div class="friend-like-chips">${likes.map(f =>
+      `<span class="friend-chip">${f.emoji} ${esc(f.dish)}</span>`).join('')}</div>`;
+}
+
+function endSwiping() {
+  const doneIcon  = document.getElementById('done-icon');
+  const doneTitle = document.getElementById('done-title');
+  const doneDesc  = document.getElementById('done-desc');
+  const doneList  = document.getElementById('done-list');
+
+  if (foundMatches.length > 0) {
+    doneIcon.textContent  = '🎊';
+    doneTitle.textContent = `${foundMatches.length} Match${foundMatches.length > 1 ? 'es' : ''}!`;
+    doneDesc.textContent  = 'You both liked:';
+    doneList.innerHTML    = foundMatches.map(f => `
+      <div class="nomatch-row">
+        <div class="nomatch-emoji">${f.emoji}</div>
+        <div>
+          <div class="nomatch-dish">${esc(f.dish)}</div>
+          <div class="nomatch-rest">${esc(f.restaurant)}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    doneIcon.textContent  = '😅';
+    doneTitle.textContent = 'No matches this time';
+    doneDesc.textContent  = 'You and your friend had totally different taste! Try again?';
+    doneList.innerHTML    = '';
+  }
+  showMsub('msub-done');
+}
+
+// ══════════════════════════════════════════
+// DRAG TO SWIPE
+// ══════════════════════════════════════════
+function setupDrag() {
+  const card = document.getElementById('swipe-card');
+  if (!card) return;
+  let startX = 0, dx = 0, dragging = false;
+  const THRESHOLD = 75;
+
+  function onStart(e) {
+    startX   = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+    dragging = true;
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    dx = (e.type === 'touchmove' ? e.touches[0].clientX : e.clientX) - startX;
+    card.style.transform = `translateX(${dx}px) rotate(${dx * 0.06}deg)`;
+    card.classList.toggle('show-like', dx > 30);
+    card.classList.toggle('show-nope', dx < -30);
+  }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    card.classList.remove('show-like','show-nope');
+    if      (dx >  THRESHOLD) doSwipe(true);
+    else if (dx < -THRESHOLD) doSwipe(false);
+    else { card.style.transform = ''; }
+    dx = 0;
+  }
+
+  card.addEventListener('mousedown',  onStart);
+  card.addEventListener('touchstart', onStart, {passive:true});
+  window.addEventListener('mousemove',  onMove);
+  window.addEventListener('touchmove',  onMove, {passive:true});
+  window.addEventListener('mouseup',    onEnd);
+  window.addEventListener('touchend',   onEnd);
+}
+
+// ══════════════════════════════════════════
+// LEAVE / CLEANUP
+// ══════════════════════════════════════════
+function leaveRoom(notify = true) {
+  if (!matchRoomId) return; // prevent re-entry
+  const roomId = matchRoomId;
+  matchRoomId   = null;     // null immediately so status listener doesn't re-trigger
+
+  // Detach all Firebase listeners
+  matchListeners.forEach(ref => { try { ref.off(); } catch(e){} });
+  matchListeners = [];
+
+  // Tell Firebase the room is closed so friend gets redirected
+  if (notify && db && firebaseReady) {
+    db.ref(`rooms/${roomId}/status`).set('closed').catch(() => {});
+  }
+
+  matchRole     = null;
+  matchFoods    = [];
+  matchIndex    = 0;
+  mySwipes      = {};
+  theirSwipes   = {};
+  foundMatches  = [];
+  shownMatchIds = new Set();
+  swipingActive = false;
+  roomBlocked   = new Set();
+
+  const inp = document.getElementById('join-code-input');
+  if (inp) inp.value = '';
+  showMsub('msub-lobby');
+}
+
+function onFriendLeft() {
+  if (!matchRoomId) return; // already left
+  showToast('👋 Your friend left — room closed');
+  leaveRoom(false); // don't write 'closed' again
+}
+
+// ══════════════════════════════════════════
+// COPY INVITE LINK
+// ══════════════════════════════════════════
+function copyRoomLink() {
+  const url = `${location.origin}${location.pathname}?room=${matchRoomId}`;
+  navigator.clipboard.writeText(url)
+    .then(() => showToast('🔗 Invite link copied!'))
+    .catch(() => prompt('Share this link with your friend:', url));
+}
+
+// ══════════════════════════════════════════
+// ROOM MENU MODAL
+// ══════════════════════════════════════════
+let currentRoomTab = 'foods';
+let rmenuSelectedEmoji = '🍕';
+
+function openRoomMenu(tab = 'foods') {
+  document.getElementById('room-menu-overlay').classList.add('open');
+  switchRoomTab(tab);
+}
+
+function closeRoomMenu(e) {
+  if (e?.target && e.target !== document.getElementById('room-menu-overlay')) return;
+  document.getElementById('room-menu-overlay').classList.remove('open');
+}
+
+function switchRoomTab(tab) {
+  currentRoomTab = tab;
+  ['foods','blocked','add'].forEach(t => {
+    document.getElementById(`rmt-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'foods')   renderRoomFoods();
+  if (tab === 'blocked') renderRoomBlocked();
+  if (tab === 'add')     renderRoomAdd();
+}
+
+// Helper: get label for a food based on its source and my role
+function getFoodLabel(food) {
+  if (food._source === 'db') return null;
+  const isMine = (matchRole === 'host' && food._source === 'host') ||
+                 (matchRole === 'guest' && food._source === 'guest');
+  return isMine ? 'mine' : 'theirs';
+}
+
+function renderRoomFoods() {
+  const body = document.getElementById('room-menu-body');
+  const visible = matchFoods.filter(f => !roomBlocked.has(f.id));
+  if (!visible.length) {
+    body.innerHTML = '<div class="rmenu-empty">No foods in the menu 😅</div>';
+    return;
+  }
+
+  body.innerHTML = visible.map(f => {
+    const labelType = getFoodLabel(f);
+    const labelText = labelType === 'mine' ? '✨ My add' : labelType === 'theirs' ? '✨ Friend\'s add' : '';
+    const isFriendsFood = labelType === 'theirs';
+    return `
+      <div class="rmenu-food-row">
+        <div class="rmenu-emoji">${f.emoji}</div>
+        <div class="rmenu-info">
+          <div class="rmenu-dish">${esc(f.dish)}</div>
+          <div class="rmenu-rest">${esc(f.restaurant)}</div>
+          ${labelText ? `<div class="rmenu-tag ${labelType}">${labelText}</div>` : ''}
+        </div>
+        <div class="rmenu-actions">
+          ${isFriendsFood ? `<button class="rmenu-btn save" onclick="saveToMyList('${f.id}')">+ Save</button>` : ''}
+          <button class="rmenu-btn block" onclick="roomBlockFood('${f.id}')">Block</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderRoomBlocked() {
+  const body = document.getElementById('room-menu-body');
+  const blocked = matchFoods.filter(f => roomBlocked.has(f.id));
+  if (!blocked.length) {
+    body.innerHTML = '<div class="rmenu-empty">No blocked foods in this room 🎉</div>';
+    return;
+  }
+  body.innerHTML = `<div class="rmenu-section-label">Blocked in this room (only you)</div>` +
+    blocked.map(f => `
+      <div class="rmenu-food-row">
+        <div class="rmenu-emoji">${f.emoji}</div>
+        <div class="rmenu-info">
+          <div class="rmenu-dish">${esc(f.dish)}</div>
+          <div class="rmenu-rest">${esc(f.restaurant)}</div>
+        </div>
+        <div class="rmenu-actions">
+          <button class="rmenu-btn unblock" onclick="roomUnblockFood('${f.id}')">Restore</button>
+        </div>
+      </div>`).join('');
+}
+
+function renderRoomAdd() {
+  const body = document.getElementById('room-menu-body');
+  body.innerHTML = `
+    <div class="rmenu-add-form">
+      <div>
+        <div class="form-label" style="margin-bottom:8px">Pick an emoji</div>
+        <div class="rmenu-emoji-grid" id="rmenu-emoji-grid"></div>
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:6px">Dish name</div>
+        <input class="form-input" id="rmenu-dish" placeholder="e.g. Spicy Tuna Roll" maxlength="50">
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:6px">Restaurant</div>
+        <input class="form-input" id="rmenu-restaurant" placeholder="e.g. Hana Sushi" maxlength="50">
+      </div>
+      <button class="rmenu-add-btn" onclick="addFoodToRoom()">Add to room + my list</button>
+    </div>`;
+
+  // Build emoji grid
+  rmenuSelectedEmoji = '🍕';
+  document.getElementById('rmenu-emoji-grid').innerHTML = FOOD_EMOJIS.map(e =>
+    `<button class="rmenu-emoji-btn ${e === rmenuSelectedEmoji ? 'selected' : ''}"
+      onclick="selectRmenuEmoji('${e}',this)">${e}</button>`
+  ).join('');
+}
+
+function selectRmenuEmoji(emoji, btn) {
+  rmenuSelectedEmoji = emoji;
+  document.querySelectorAll('.rmenu-emoji-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function roomBlockFood(id) {
+  roomBlocked.add(id);
+  showToast('Blocked in this room 🚫');
+  renderRoomFoods();
+}
+
+function roomUnblockFood(id) {
+  roomBlocked.delete(id);
+  showToast('Food restored ✓');
+  renderRoomBlocked();
+}
+
+function saveToMyList(id) {
+  const food = matchFoods.find(f => f.id === id);
+  if (!food) return;
+  // Check not already in local customFoods
+  if (customFoods.some(f => f.dish === food.dish && f.restaurant === food.restaurant)) {
+    showToast('Already in your list!');
+    return;
+  }
+  const newFood = { id: 'c' + Date.now(), emoji: food.emoji, dish: food.dish, restaurant: food.restaurant, cat: 'custom' };
+  customFoods.push(newFood);
+  saveToStorage();
+  showToast(`${food.emoji} Saved to your list!`);
+  renderRoomFoods();
+}
+
+function addFoodToRoom() {
+  const dish       = document.getElementById('rmenu-dish')?.value.trim();
+  const restaurant = document.getElementById('rmenu-restaurant')?.value.trim();
+  if (!dish)       { document.getElementById('rmenu-dish')?.focus(); return; }
+  if (!restaurant) { document.getElementById('rmenu-restaurant')?.focus(); return; }
+
+  const newFood = {
+    id: 'r' + Date.now(),
+    emoji: rmenuSelectedEmoji,
+    dish, restaurant,
+    cat: 'custom',
+    _source: matchRole  // tag as mine
+  };
+
+  // Add to this room's swipe queue
+  matchFoods.push(newFood);
+
+  // Also save to my local list
+  const forStorage = { id: 'c' + Date.now(), emoji: rmenuSelectedEmoji, dish, restaurant, cat: 'custom' };
+  customFoods.push(forStorage);
+  saveToStorage();
+
+  showToast(`${rmenuSelectedEmoji} ${dish} added!`);
+  document.getElementById('room-menu-overlay').classList.remove('open');
+}
+
+// ══════════════════════════════════════════
+// MATCH SUB-VIEW SWITCHER
+// ══════════════════════════════════════════
+function showMsub(id) {
+  document.querySelectorAll('.msub').forEach(el => el.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+</script>
+</body>
+</html>
