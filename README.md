@@ -59,6 +59,8 @@ Tap the **Match** tab. One person creates a room and shares the 6-letter code; t
 
 Once both players are in, you'll each swipe through dishes independently — ❤️ for yes, ✕ for no. When you both like the same dish, you get a **It's a Match!** 🎉 screen showing what you both want.
 
+<img src="screenshots/06_swipe.png" width="320" alt="Swipe">
+
 The shared menu includes foods added by both players and automatically excludes dishes blocked by either person.
 
 ---
