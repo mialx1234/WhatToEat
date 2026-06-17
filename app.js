@@ -898,6 +898,7 @@ function joinFromInvite() {
   joinRoom(code);
 }
 
+
 async function joinRoom(codeOverride) {
   if (!initFirebase()) return;
 
@@ -910,9 +911,9 @@ async function joinRoom(codeOverride) {
     const snap = await db.ref(`rooms/${code}`).once('value');
     const room = snap.val();
 
-    if (!room)                  { showToast('Room not found 🤔'); return; }
+    if (!room)                     { showToast('Room not found 🤔'); return; }
     if (room.status !== 'waiting') { showToast('Room is already active or closed'); return; }
-    if (room.guest?.ready)      { showToast('Room is full!'); return; }
+    if (room.guest?.ready)         { showToast('Room is full! Did you create this room? Tap "I made this room" below.'); return; }
 
     matchRoomId = code;
     matchRole   = 'guest';
