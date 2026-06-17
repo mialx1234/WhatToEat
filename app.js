@@ -259,11 +259,9 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshVisualItems();
   drawWheel();
 
-  // Handle ?room=XXXXXX join link — show invite screen
-  const urlParams = new URLSearchParams(location.search);
-  const roomParam = urlParams.get('room');
-  if (roomParam) {
-    const code = roomParam.replace(/\D/g, '').slice(0, 6);
+  // Handle #room=XXXXXX join link — hash is invisible to server-side crawlers
+  if (hash.startsWith('room=')) {
+    const code = hash.slice(5).replace(/\D/g, '').slice(0, 6);
     switchTab('match');
     document.getElementById('invite-code-display').textContent = code;
     showMsub('msub-invited');
@@ -1135,7 +1133,7 @@ function onFriendLeft() {
 // COPY INVITE LINK
 // ══════════════════════════════════════════
 function copyRoomLink() {
-  const url = `${location.origin}${location.pathname}?room=${matchRoomId}`;
+  const url = `${location.origin}${location.pathname}#room=${matchRoomId}`;
   navigator.clipboard.writeText(url)
     .then(() => showToast('🔗 Invite link copied!'))
     .catch(() => prompt('Share this link with your friend:', url));
