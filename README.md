@@ -1,4 +1,4 @@
-# 🎡 WhatToEat
+# 🍽️ WhatToEat
 
 A fun, mobile-first food decision app. Can't decide what to eat? Spin the wheel, browse 100+ dishes, or match with a friend.
 
