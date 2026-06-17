@@ -259,23 +259,6 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshVisualItems();
   drawWheel();
 
-  // Handle ?room=XXXXXX join link
-  const urlParams = new URLSearchParams(location.search);
-  const roomParam = urlParams.get('room');
-  if (roomParam) {
-    const code = roomParam.toUpperCase();
-    switchTab('match');
-    document.getElementById('invite-code-display').textContent = code;
-
-    // If this device created this room, reconnect as host instead of showing invite screen
-    if (localStorage.getItem('wte_my_room') === code) {
-      reconnectAsHost(code);
-    } else {
-      showMsub('msub-invited');
-    }
-    return;
-  }
-
   // Show tutorial on first visit
   setTimeout(initTutorial, 400);
 });
@@ -709,9 +692,8 @@ let roomBlocked    = new Set(); // food IDs blocked only in this room session
 // ROOM ID
 // ══════════════════════════════════════════
 function genRoomId() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id = '';
-  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 6; i++) id += Math.floor(Math.random() * 10);
   return id;
 }
 
@@ -780,7 +762,6 @@ async function createRoom() {
       guest:     null
     });
 
-    localStorage.setItem('wte_my_room', matchRoomId); // so we can reconnect as host if link is opened again
     document.getElementById('room-code-display').textContent = matchRoomId;
     document.getElementById('pname-me').textContent = 'You (host)';
     showMsub('msub-waiting');
@@ -813,61 +794,6 @@ async function createRoom() {
 }
 
 // Re-attach host listeners when host reopens their own share link
-function reconnectAsHost(code) {
-  if (!initFirebase()) { showMsub('msub-lobby'); return; }
-
-  // Verify room still exists and is waiting
-  db.ref(`rooms/${code}`).once('value').then(snap => {
-    const room = snap.val();
-    if (!room || room.status === 'closed') {
-      localStorage.removeItem('wte_my_room');
-      showToast('Your room has expired — create a new one');
-      showMsub('msub-lobby');
-      return;
-    }
-
-    matchRoomId = code;
-    matchRole   = 'host';
-
-    document.getElementById('room-code-display').textContent = code;
-    document.getElementById('pname-me').textContent = 'You (host)';
-
-    // If room is already active (game started), jump into swiping
-    if (room.status === 'active') {
-      matchFoods = Object.values(room.foods || {});
-      showMsub('msub-waiting');
-      showToast('Room already started — reconnecting…');
-    } else {
-      showMsub('msub-waiting');
-      showToast('Back in your room 🔑');
-    }
-
-    // Re-attach guest listener
-    const guestRef = db.ref(`rooms/${code}/guest`);
-    matchListeners.push(guestRef);
-    guestRef.on('value', snap => {
-      const g = snap.val();
-      if (g && g.ready) {
-        document.getElementById('pstatus-friend').textContent = '✓ Joined!';
-        document.getElementById('pcard-friend').classList.add('you');
-        document.getElementById('waiting-dot').classList.add('connected');
-        document.getElementById('waiting-text').textContent = 'Building your menu…';
-        hostStartGame();
-      }
-    });
-
-    // Re-attach status listener
-    const statusRef = db.ref(`rooms/${code}/status`);
-    matchListeners.push(statusRef);
-    statusRef.on('value', snap => {
-      if (snap.val() === 'closed' && matchRoomId) onFriendLeft();
-    });
-
-  }).catch(() => {
-    showToast('Could not reconnect — try creating a new room');
-    showMsub('msub-lobby');
-  });
-}
 
 // Host reads both prefs, computes pool, writes foods, starts game
 async function hostStartGame() {
@@ -890,19 +816,15 @@ async function hostStartGame() {
 // ══════════════════════════════════════════
 // JOIN ROOM (guest)
 // ══════════════════════════════════════════
-function joinFromInvite() {
-  const code = document.getElementById('invite-code-display').textContent.trim();
-  joinRoom(code);
-}
 
 
 async function joinRoom(codeOverride) {
   if (!initFirebase()) return;
 
   const code = (codeOverride || document.getElementById('join-code-input')?.value || '')
-    .toUpperCase().replace(/\s/g,'');
+    .replace(/\D/g,'').slice(0, 6);
 
-  if (code.length !== 6) { showToast('Enter a 6-character code'); return; }
+  if (code.length !== 6) { showToast('Enter the 6-digit code'); return; }
 
   try {
     const snap = await db.ref(`rooms/${code}`).once('value');
@@ -1169,7 +1091,6 @@ function leaveRoom(notify = true) {
     db.ref(`rooms/${roomId}/status`).set('closed').catch(() => {});
   }
 
-  localStorage.removeItem('wte_my_room'); // clear host claim so link no longer reconnects
   matchRole     = null;
   matchFoods    = [];
   swipeQueue    = [];
@@ -1198,9 +1119,9 @@ function onFriendLeft() {
 // COPY INVITE LINK
 // ══════════════════════════════════════════
 function copyRoomLink() {
-  const url = `${location.origin}${location.pathname}?room=${matchRoomId}`;
+  const url = `${location.origin}${location.pathname}`;
   navigator.clipboard.writeText(url)
-    .then(() => showToast('🔗 Invite link copied!'))
+    .then(() => showToast('🔗 Link copied! Share with your friend'))
     .catch(() => prompt('Share this link with your friend:', url));
 }
 
