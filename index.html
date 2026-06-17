@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatToEat 🎡</title>
+  <title>WhatToEat</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <!-- Firebase Realtime Database (compat v10) -->
@@ -14,13 +14,13 @@
 
 <div class="share-banner" id="share-banner"></div>
 <header>
-  <div class="logo">🎡 WhatToEat</div>
+  <div class="logo">WhatToEat</div>
   <button id="lang-btn" onclick="toggleLang()">中文</button>
 </header>
 <nav id="main-nav">
-  <button class="tab active" onclick="switchTab('spin')">🎡 Spin</button>
-  <button class="tab" onclick="switchTab('browse')">🍽️ Browse</button>
-  <button class="tab" onclick="switchTab('match')">🥂 Match</button>
+  <button class="tab active" onclick="switchTab('spin')">Spin</button>
+  <button class="tab" onclick="switchTab('browse')">Browse</button>
+  <button class="tab" onclick="switchTab('match')">Match</button>
 </nav>
 
 <!-- ═══ SPIN VIEW ═══ -->
@@ -29,7 +29,7 @@
 
     <div class="spin-tagline">
       Can't decide what to eat?
-      <span>Give it a spin — let fate choose for you 🍽️</span>
+      <span>Give it a spin — let fate choose for you</span>
       <a class="spin-meta-blocked" id="stat-blocked-link" onclick="switchTab('browse')"></a>
     </div>
 
@@ -65,7 +65,7 @@
 
     <!-- Lobby: create or join -->
     <div class="msub active" id="msub-lobby">
-      <div class="match-headline">👥 Match with a friend</div>
+      <div class="match-headline">Match with a friend</div>
       <div class="match-sub">Both swipe on food — see what you agree on</div>
 
       <div class="match-action-card" onclick="createRoom()">
@@ -123,7 +123,9 @@
         <div class="swipe-card" id="swipe-card">
           <div class="like-stamp">LIKE ❤️</div>
           <div class="nope-stamp">NOPE ✕</div>
-          <div class="swipe-emoji" id="swipe-emoji">🍕</div>
+          <div class="swipe-emoji-wrap">
+            <div class="swipe-emoji" id="swipe-emoji">🍕</div>
+          </div>
           <div class="swipe-dish"  id="swipe-dish">Loading…</div>
           <div class="swipe-rest"  id="swipe-rest"></div>
         </div>
@@ -142,7 +144,7 @@
 
       <div style="display:flex;gap:10px;margin-top:16px">
         <button class="btn-secondary" style="font-size:13px;padding:8px 18px" onclick="openRoomMenu('foods')">📋 View menu</button>
-        <button class="btn-secondary" style="font-size:13px;padding:8px 18px;color:#FF5252;border-color:#FF5252" onclick="leaveRoom()">Leave room</button>
+        <button class="btn-secondary" style="font-size:13px;padding:8px 18px;color:var(--red);border-color:var(--red)" onclick="leaveRoom()">Leave room</button>
       </div>
     </div>
 
@@ -218,7 +220,9 @@
   <div class="result-card">
     <button class="result-close" onclick="closeResult()" title="Close">✕</button>
     <div class="result-label">Today you're eating</div>
-    <span class="result-emoji-big" id="result-emoji"></span>
+    <div class="result-emoji-wrap">
+      <span class="result-emoji-big" id="result-emoji"></span>
+    </div>
     <div class="result-dish-name" id="result-dish"></div>
     <div class="result-rest-name" id="result-restaurant"></div>
 

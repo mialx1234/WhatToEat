@@ -466,7 +466,7 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════════
 // WHEEL CANVAS
 // ══════════════════════════════════════════
-const WHEEL_COLORS = ['#FFB3B3','#FFCBA4','#FFE4A3','#B5EAD7','#9BD8E8','#C5B3E6','#FFB3D4','#A8E6CF'];
+const WHEEL_COLORS = ['#FFE566','#FFB3B3','#FFCBA4','#B5EAD7','#9BD8E8','#E0C4E8','#FFB3D4','#A8E6CF'];
 let visualItems  = [];   // 8 foods shown on wheel each spin
 
 function refreshVisualItems() {
@@ -492,10 +492,10 @@ function renderWheel(items, angle) {
   if (!items.length) {
     // Empty state
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#F0EDE8'; ctx.fill();
+    ctx.fillStyle = '#FFF9E6'; ctx.fill();
     ctx.font = '56px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('🍽️', cx, cy - 20);
-    ctx.font = 'bold 24px Inter,sans-serif'; ctx.fillStyle = '#C0BDB8';
+    ctx.font = 'bold 24px Inter,sans-serif'; ctx.fillStyle = '#C8B89A';
     ctx.fillText('Nothing to spin', cx, cx + 46);
     return;
   }
