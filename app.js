@@ -259,7 +259,7 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshVisualItems();
   drawWheel();
 
-  // Handle ?room=XXXXXX join link
+  // Handle ?room=XXXXXX join link — pre-fill code, user taps Join to confirm
   const urlParams = new URLSearchParams(location.search);
   const roomParam = urlParams.get('room');
   if (roomParam) {
@@ -267,21 +267,7 @@ window.addEventListener('DOMContentLoaded', () => {
     switchTab('match');
     const inp = document.getElementById('join-code-input');
     if (inp) inp.value = code;
-
-    // Auto-join after all CDN scripts (Firebase) are fully loaded
-    let joined = false;
-    const tryAutoJoin = async (attempt = 0) => {
-      if (joined) return;
-      try {
-        if (typeof firebase === 'undefined' || !firebase.apps) throw new Error('not ready');
-        await joinRoom(code);
-        joined = true;
-      } catch (e) {
-        // Firebase not ready yet — retry up to 10 times (~3s)
-        if (attempt < 10) setTimeout(() => tryAutoJoin(attempt + 1), 300);
-      }
-    };
-    window.addEventListener('load', () => tryAutoJoin(), { once: true });
+    // Deliberately no auto-join: user must tap Join to enter the room
     return;
   }
 
@@ -842,7 +828,7 @@ async function hostStartGame() {
 // JOIN ROOM (guest)
 // ══════════════════════════════════════════
 async function joinRoom(codeOverride) {
-  if (!initFirebase()) throw new Error('Firebase not ready');
+  if (!initFirebase()) return;
 
   const code = (codeOverride || document.getElementById('join-code-input')?.value || '')
     .toUpperCase().replace(/\s/g,'');
