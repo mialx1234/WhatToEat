@@ -259,17 +259,23 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshVisualItems();
   drawWheel();
 
-  // Handle ?room=XXXXXX join link — show dedicated invite screen
+  // Handle ?room=XXXXXX join link
   const urlParams = new URLSearchParams(location.search);
   const roomParam = urlParams.get('room');
   if (roomParam) {
     const code = roomParam.toUpperCase();
     switchTab('match');
+    // Pre-fill invite display and lobby input
     document.getElementById('invite-code-display').textContent = code;
-    // Also pre-fill the lobby input as fallback
     const inp = document.getElementById('join-code-input');
     if (inp) inp.value = code;
-    showMsub('msub-invited');
+
+    // If this device created this room, reconnect as host instead of showing invite screen
+    if (localStorage.getItem('wte_my_room') === code) {
+      reconnectAsHost(code);
+    } else {
+      showMsub('msub-invited');
+    }
     return;
   }
 
@@ -777,6 +783,7 @@ async function createRoom() {
       guest:     null
     });
 
+    localStorage.setItem('wte_my_room', matchRoomId); // so we can reconnect as host if link is opened again
     document.getElementById('room-code-display').textContent = matchRoomId;
     document.getElementById('pname-me').textContent = 'You (host)';
     showMsub('msub-waiting');
@@ -806,6 +813,63 @@ async function createRoom() {
     showToast('Error creating room 😕');
     console.error(e);
   }
+}
+
+// Re-attach host listeners when host reopens their own share link
+function reconnectAsHost(code) {
+  if (!initFirebase()) { showMsub('msub-lobby'); return; }
+
+  // Verify room still exists and is waiting
+  db.ref(`rooms/${code}`).once('value').then(snap => {
+    const room = snap.val();
+    if (!room || room.status === 'closed') {
+      localStorage.removeItem('wte_my_room');
+      showToast('Your room has expired — create a new one');
+      showMsub('msub-lobby');
+      return;
+    }
+
+    matchRoomId = code;
+    matchRole   = 'host';
+
+    document.getElementById('room-code-display').textContent = code;
+    document.getElementById('pname-me').textContent = 'You (host)';
+
+    // If room is already active (game started), jump into swiping
+    if (room.status === 'active') {
+      matchFoods = Object.values(room.foods || {});
+      showMsub('msub-waiting');
+      showToast('Room already started — reconnecting…');
+    } else {
+      showMsub('msub-waiting');
+      showToast('Back in your room 🔑');
+    }
+
+    // Re-attach guest listener
+    const guestRef = db.ref(`rooms/${code}/guest`);
+    matchListeners.push(guestRef);
+    guestRef.on('value', snap => {
+      const g = snap.val();
+      if (g && g.ready) {
+        document.getElementById('pstatus-friend').textContent = '✓ Joined!';
+        document.getElementById('pcard-friend').classList.add('you');
+        document.getElementById('waiting-dot').classList.add('connected');
+        document.getElementById('waiting-text').textContent = 'Building your menu…';
+        hostStartGame();
+      }
+    });
+
+    // Re-attach status listener
+    const statusRef = db.ref(`rooms/${code}/status`);
+    matchListeners.push(statusRef);
+    statusRef.on('value', snap => {
+      if (snap.val() === 'closed' && matchRoomId) onFriendLeft();
+    });
+
+  }).catch(() => {
+    showToast('Could not reconnect — try creating a new room');
+    showMsub('msub-lobby');
+  });
 }
 
 // Host reads both prefs, computes pool, writes foods, starts game
@@ -1107,6 +1171,7 @@ function leaveRoom(notify = true) {
     db.ref(`rooms/${roomId}/status`).set('closed').catch(() => {});
   }
 
+  localStorage.removeItem('wte_my_room'); // clear host claim so link no longer reconnects
   matchRole     = null;
   matchFoods    = [];
   swipeQueue    = [];
