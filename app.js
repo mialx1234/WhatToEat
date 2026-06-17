@@ -259,6 +259,17 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshVisualItems();
   drawWheel();
 
+  // Handle ?room=XXXXXX join link — show invite screen
+  const urlParams = new URLSearchParams(location.search);
+  const roomParam = urlParams.get('room');
+  if (roomParam) {
+    const code = roomParam.replace(/\D/g, '').slice(0, 6);
+    switchTab('match');
+    document.getElementById('invite-code-display').textContent = code;
+    showMsub('msub-invited');
+    return;
+  }
+
   // Show tutorial on first visit
   setTimeout(initTutorial, 400);
 });
@@ -818,6 +829,11 @@ async function hostStartGame() {
 // ══════════════════════════════════════════
 
 
+function joinFromInvite() {
+  const code = document.getElementById('invite-code-display').textContent.trim();
+  joinRoom(code);
+}
+
 async function joinRoom(codeOverride) {
   if (!initFirebase()) return;
 
@@ -1119,9 +1135,9 @@ function onFriendLeft() {
 // COPY INVITE LINK
 // ══════════════════════════════════════════
 function copyRoomLink() {
-  const url = `${location.origin}${location.pathname}`;
+  const url = `${location.origin}${location.pathname}?room=${matchRoomId}`;
   navigator.clipboard.writeText(url)
-    .then(() => showToast('🔗 Link copied! Share with your friend'))
+    .then(() => showToast('🔗 Invite link copied!'))
     .catch(() => prompt('Share this link with your friend:', url));
 }
 
