@@ -131,18 +131,18 @@ const FOOD_DB = [
 ];
 
 const CATEGORIES = [
-  {id:'all',        label:'All 🍽️',          labelZh:'全部 🍽️'},
-  {id:'american',   label:'🍔 American',      labelZh:'🍔 美式'},
-  {id:'pizza',      label:'🍕 Pizza',         labelZh:'🍕 披萨'},
-  {id:'asian',      label:'🥢 Asian',         labelZh:'🥢 亚洲料理'},
-  {id:'mexican',    label:'🌮 Mexican',       labelZh:'🌮 墨西哥'},
-  {id:'indian',     label:'🍛 Indian',        labelZh:'🍛 印度'},
-  {id:'mediterranean',label:'🥙 Mediterranean',labelZh:'🥙 地中海'},
-  {id:'healthy',    label:'🥗 Healthy',       labelZh:'🥗 健康轻食'},
-  {id:'italian',    label:'🍝 Italian',       labelZh:'🍝 意大利'},
-  {id:'bbq',        label:'🔥 BBQ',           labelZh:'🔥 烧烤'},
-  {id:'custom',     label:'✨ My Adds',       labelZh:'✨ 我的添加'},
-  {id:'blocked',    label:'🚫 Blocked',       labelZh:'🚫 已屏蔽'},
+  {id:'all',           label:'All',              labelZh:'全部'},
+  {id:'custom',        label:'✨ My Adds',        labelZh:'✨ 我的添加'},
+  {id:'blocked',       label:'🚫 Blocked',        labelZh:'🚫 已屏蔽'},
+  {id:'american',      label:'🍔 American',       labelZh:'🍔 美式'},
+  {id:'pizza',         label:'🍕 Pizza',          labelZh:'🍕 披萨'},
+  {id:'asian',         label:'🥢 Asian',          labelZh:'🥢 亚洲料理'},
+  {id:'mexican',       label:'🌮 Mexican',        labelZh:'🌮 墨西哥'},
+  {id:'indian',        label:'🍛 Indian',         labelZh:'🍛 印度'},
+  {id:'mediterranean', label:'🥙 Mediterranean',  labelZh:'🥙 地中海'},
+  {id:'healthy',       label:'🥗 Healthy',        labelZh:'🥗 健康轻食'},
+  {id:'italian',       label:'🍝 Italian',        labelZh:'🍝 意大利'},
+  {id:'bbq',           label:'🔥 BBQ',            labelZh:'🔥 烧烤'},
 ];
 
 const CAT_LABEL = {american:'American',pizza:'Pizza',asian:'Asian',mexican:'Mexican',indian:'Indian',mediterranean:'Mediterranean',healthy:'Healthy',italian:'Italian',bbq:'BBQ',custom:'My Adds'};
@@ -267,7 +267,11 @@ window.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('join-code-input');
     if (inp) inp.value = roomParam.toUpperCase();
     setTimeout(() => joinRoom(roomParam.toUpperCase()), 400);
+    return;
   }
+
+  // Show tutorial on first visit
+  setTimeout(initTutorial, 400);
 });
 
 function allFoods() { return [...FOOD_DB, ...customFoods]; }
@@ -1303,4 +1307,312 @@ function addFoodToRoom() {
 function showMsub(id) {
   document.querySelectorAll('.msub').forEach(el => el.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// TUTORIAL SYSTEM
+// ══════════════════════════════════════════
+
+const TUTORIAL_ART = {
+  spin: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="46" r="32" fill="#FFF9E6" stroke="#F0E9D2" stroke-width="2"/>
+    <path d="M60 46 L60 14 A32 32 0 0 1 87.7 62 Z" fill="#FFE566"/>
+    <path d="M60 46 L87.7 62 A32 32 0 0 1 32.3 62 Z" fill="#FFB3B3"/>
+    <path d="M60 46 L32.3 62 A32 32 0 0 1 60 14 Z" fill="#B5EAD7"/>
+    <circle cx="60" cy="46" r="7" fill="white" stroke="#F0E9D2" stroke-width="2"/>
+    <polygon points="60,6 54,18 66,18" fill="#F5C518" stroke="#E5B008" stroke-width="1"/>
+    <text x="68" y="34" font-size="12" text-anchor="middle">🍕</text>
+    <text x="76" y="62" font-size="12" text-anchor="middle">🍔</text>
+    <text x="40" y="58" font-size="12" text-anchor="middle">🍜</text>
+    <text x="20" y="20" font-size="11">✨</text>
+    <text x="96" y="22" font-size="10">⭐</text>
+  </svg>`,
+
+  block: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="60" cy="56" rx="28" ry="8" fill="#F0E9D2"/>
+    <path d="M32 50 Q32 74 60 74 Q88 74 88 50 Z" fill="#FFF9E6" stroke="#F0E9D2" stroke-width="2"/>
+    <path d="M42 55 Q50 50 58 55 Q66 60 74 55" stroke="#FFB3B3" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M44 62 Q53 57 62 62 Q70 66 76 62" stroke="#FFCBA4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="60" cy="44" r="22" fill="none" stroke="#E85D50" stroke-width="4" opacity="0.9"/>
+    <line x1="44" y1="28" x2="76" y2="60" stroke="#E85D50" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+    <text x="96" y="20" font-size="14">😕</text>
+  </svg>`,
+
+  add: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="60" cy="62" rx="30" ry="9" fill="#F0E9D2"/>
+    <ellipse cx="60" cy="58" rx="26" ry="7" fill="white" stroke="#F0E9D2" stroke-width="2"/>
+    <text x="60" y="64" font-size="20" text-anchor="middle">🍱</text>
+    <circle cx="82" cy="26" r="16" fill="#FFE566" stroke="white" stroke-width="3"/>
+    <line x1="82" y1="18" x2="82" y2="34" stroke="#2D2410" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="74" y1="26" x2="90" y2="26" stroke="#2D2410" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="24" cy="22" r="4" fill="#FFE566"/>
+    <circle cx="18" cy="38" r="3" fill="#FFB3D4"/>
+    <circle cx="32" cy="14" r="3" fill="#B5EAD7"/>
+    <text x="20" y="20" font-size="10">✨</text>
+  </svg>`,
+
+  match: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M38 38 C38 32 30 28 26 34 C22 40 30 50 38 56 C46 50 54 40 50 34 C46 28 38 32 38 38 Z" fill="#FFB3D4"/>
+    <path d="M82 38 C82 32 74 28 70 34 C66 40 74 50 82 56 C90 50 98 40 94 34 C90 28 82 32 82 38 Z" fill="#FFE566" stroke="#F5C518" stroke-width="1.5"/>
+    <circle cx="56" cy="46" r="3" fill="#F0E9D2"/>
+    <circle cx="60" cy="44" r="4" fill="#F5C518"/>
+    <circle cx="64" cy="46" r="3" fill="#F0E9D2"/>
+    <text x="33" y="44" font-size="11" text-anchor="middle">🍕</text>
+    <text x="87" y="44" font-size="11" text-anchor="middle">🍕</text>
+    <text x="52" y="22" font-size="13">🎉</text>
+    <text x="18" y="26" font-size="10">✨</text>
+    <text x="94" y="26" font-size="10">✨</text>
+  </svg>`,
+
+  roomcode: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Left phone -->
+    <rect x="12" y="20" width="30" height="50" rx="6" fill="white" stroke="#F0E9D2" stroke-width="2"/>
+    <rect x="16" y="26" width="22" height="30" rx="3" fill="#FFF9E6"/>
+    <text x="27" y="46" font-size="13" text-anchor="middle">🙂</text>
+    <!-- Right phone -->
+    <rect x="78" y="20" width="30" height="50" rx="6" fill="white" stroke="#F0E9D2" stroke-width="2"/>
+    <rect x="82" y="26" width="22" height="30" rx="3" fill="#FFF9E6"/>
+    <text x="93" y="46" font-size="13" text-anchor="middle">😊</text>
+    <!-- Code badge in center -->
+    <rect x="34" y="32" width="52" height="26" rx="10" fill="#FFE566" stroke="#F5C518" stroke-width="1.5"/>
+    <text x="60" y="43" font-size="8.5" font-weight="bold" fill="#2D2410" text-anchor="middle" font-family="monospace">ABC123</text>
+    <!-- Arrow -->
+    <text x="60" y="30" font-size="11" text-anchor="middle">📤</text>
+    <!-- Phone dots -->
+    <circle cx="27" cy="64" r="3" fill="#F0E9D2"/>
+    <circle cx="93" cy="64" r="3" fill="#F0E9D2"/>
+  </svg>`,
+
+  swipe: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Card -->
+    <rect x="34" y="12" width="52" height="66" rx="12" fill="white" stroke="#F0E9D2" stroke-width="2"/>
+    <text x="60" y="54" font-size="28" text-anchor="middle">🍔</text>
+    <!-- NOPE label on card -->
+    <text x="42" y="28" font-size="7.5" font-weight="bold" fill="#E85D50" opacity="0.75">NOPE</text>
+    <!-- LIKE label on card -->
+    <text x="74" y="28" font-size="7.5" font-weight="bold" fill="#6B8F4E" opacity="0.75" text-anchor="end">LIKE</text>
+    <!-- Left circle (nope) -->
+    <circle cx="16" cy="45" r="12" fill="#FFB3B3" opacity="0.9"/>
+    <text x="16" y="50" font-size="13" text-anchor="middle">✕</text>
+    <!-- Right circle (like) -->
+    <circle cx="104" cy="45" r="12" fill="#B5EAD7" opacity="0.9"/>
+    <text x="104" y="50" font-size="12" text-anchor="middle">❤️</text>
+    <!-- Left arrow -->
+    <line x1="32" y1="45" x2="22" y2="45" stroke="#E85D50" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="22,45 27,42 27,48" fill="#E85D50"/>
+    <!-- Right arrow -->
+    <line x1="88" y1="45" x2="98" y2="45" stroke="#6B8F4E" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="98,45 93,42 93,48" fill="#6B8F4E"/>
+  </svg>`,
+
+  menu: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Clipboard body -->
+    <rect x="26" y="18" width="68" height="62" rx="8" fill="white" stroke="#F0E9D2" stroke-width="2"/>
+    <!-- Clip tab -->
+    <rect x="42" y="12" width="36" height="14" rx="5" fill="#FFE566" stroke="#F5C518" stroke-width="1.5"/>
+    <!-- Two people icon -->
+    <text x="82" y="34" font-size="13">👥</text>
+    <!-- Menu rows -->
+    <text x="34" y="40" font-size="12">🍕</text>
+    <text x="50" y="40" font-size="10" fill="#2D2410">Pizza</text>
+    <text x="84" y="40" font-size="11" fill="#6B8F4E">✓</text>
+    <text x="34" y="55" font-size="12">🍔</text>
+    <text x="50" y="55" font-size="10" fill="#2D2410">Burger</text>
+    <text x="84" y="55" font-size="11" fill="#6B8F4E">✓</text>
+    <!-- Blocked item (strikethrough) -->
+    <text x="34" y="70" font-size="12">🍣</text>
+    <text x="50" y="70" font-size="10" fill="#C0B8A8">Sushi</text>
+    <line x1="49" y1="68" x2="75" y2="68" stroke="#E85D50" stroke-width="1.5" opacity="0.7"/>
+    <text x="84" y="70" font-size="10" fill="#E85D50">✕</text>
+  </svg>`,
+
+  matchresult: `<svg width="120" height="88" viewBox="0 0 120 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Confetti pieces -->
+    <rect x="16" y="10" width="9" height="9" rx="2" fill="#FFE566" transform="rotate(25 20 14)"/>
+    <rect x="96" y="12" width="8" height="8" rx="2" fill="#FFB3D4" transform="rotate(-20 100 16)"/>
+    <rect x="10" y="52" width="7" height="7" rx="1" fill="#B5EAD7" transform="rotate(40 13 55)"/>
+    <rect x="103" y="50" width="7" height="7" rx="1" fill="#FFCBA4" transform="rotate(-30 106 53)"/>
+    <circle cx="22" cy="38" r="4" fill="#FFB3B3"/>
+    <circle cx="100" cy="34" r="4" fill="#FFE566"/>
+    <!-- Glow circle -->
+    <circle cx="60" cy="46" r="30" fill="#FFF9E6" stroke="#FFE566" stroke-width="3"/>
+    <!-- Food -->
+    <text x="60" y="55" font-size="28" text-anchor="middle">🍕</text>
+    <!-- Stars -->
+    <text x="8" y="22" font-size="12">⭐</text>
+    <text x="102" y="24" font-size="12">⭐</text>
+    <!-- Match text -->
+    <text x="60" y="84" font-size="8.5" font-weight="bold" fill="#F5C518" text-anchor="middle" letter-spacing="1">MATCH!</text>
+  </svg>`
+};
+
+const TUTORIAL_STEPS = [
+  {
+    tab: 'spin',
+    anchorFn: () => document.querySelector('.spin-actions'),
+    arrow: 'top',
+    title: 'Spin to Decide!',
+    desc: 'Tap Spin and let the wheel pick your meal at random. Feeling lucky?',
+    art: 'spin'
+  },
+  {
+    tab: 'browse',
+    anchorFn: () => document.querySelector('.food-row'),
+    arrow: 'top',
+    title: 'Block What You Hate',
+    desc: 'Swipe left on any dish or tap ✕ to block it from your wheel forever.',
+    art: 'block'
+  },
+  {
+    tab: 'browse',
+    anchorFn: () => document.querySelector('.browse-search-row'),
+    arrow: 'top',
+    title: 'Add Your Own Food',
+    desc: 'Tap "+ Add" to add a custom dish — your secret Chipotle order, anything!',
+    art: 'add'
+  },
+  {
+    tab: 'match',
+    anchorFn: () => document.querySelector('.match-action-card'),
+    arrow: 'top',
+    title: 'Match with a Friend',
+    desc: 'Create a room and share the code — your friend joins and you both start swiping!',
+    art: 'match'
+  },
+  {
+    tab: 'match',
+    setupFn: () => {
+      document.getElementById('room-code-display').textContent = 'ABC123';
+      showMsub('msub-waiting');
+    },
+    anchorFn: () => document.querySelector('#msub-waiting .room-code-box'),
+    arrow: 'top',
+    title: 'Share Your Room Code',
+    desc: 'Send this code to your friend. They type it in to join — then the swiping begins!',
+    art: 'roomcode'
+  },
+  {
+    tab: 'match',
+    setupFn: () => {
+      document.getElementById('swipe-emoji').textContent = '🍔';
+      document.getElementById('swipe-dish').textContent = 'Cheeseburger';
+      document.getElementById('swipe-rest').textContent = '';
+      document.getElementById('swipe-progress').textContent = 'Card 3 of 20';
+      showMsub('msub-swiping');
+    },
+    anchorFn: () => document.querySelector('.swipe-btns'),
+    arrow: 'top',
+    title: 'Swipe to Vote',
+    desc: 'Like a dish? Tap ❤️ or swipe right. Not feeling it? Tap ✕ or swipe left. Your friend votes independently!',
+    art: 'swipe'
+  },
+  {
+    tab: 'match',
+    setupFn: () => showMsub('msub-swiping'),
+    anchorFn: () => document.querySelector('#msub-swiping .btn-secondary'),
+    arrow: 'top',
+    title: 'Your Shared Menu',
+    desc: 'Tap "View menu" to see all options — includes foods added by both of you, with everyone\'s blocked dishes removed.',
+    art: 'menu'
+  },
+  {
+    tab: 'match',
+    setupFn: () => {
+      document.getElementById('match-food-emoji').textContent = '🍕';
+      document.getElementById('match-food-dish').textContent = 'Pepperoni Pizza';
+      document.getElementById('match-food-rest').textContent = '';
+      showMsub('msub-match');
+    },
+    anchorFn: () => document.querySelector('.match-food-card'),
+    arrow: 'top',
+    title: "It's a Match! 🎉",
+    desc: "When you both swipe right on the same dish, this screen appears. Dinner decision: officially made!",
+    art: 'matchresult'
+  }
+];
+
+let tutStep = 0;
+
+function initTutorial() {
+  if (localStorage.getItem('wte_tutorial_done')) return;
+  tutStep = 0;
+  showTutorialStep(tutStep);
+}
+
+function replayTutorial() {
+  tutStep = 0;
+  showTutorialStep(tutStep);
+}
+
+function showTutorialStep(step) {
+  const steps = TUTORIAL_STEPS;
+  if (step >= steps.length) { endTutorial(); return; }
+
+  const s = steps[step];
+  const card = document.getElementById('tutorial-card');
+  const spotlight = document.getElementById('tutorial-spotlight');
+
+  switchTab(s.tab);
+
+  const doPosition = () => {
+    if (s.setupFn) s.setupFn();
+
+    const anchor = s.anchorFn();
+    if (!anchor) { endTutorial(); return; }
+
+    const rect = anchor.getBoundingClientRect();
+
+    document.getElementById('tut-art').innerHTML = TUTORIAL_ART[s.art];
+    document.getElementById('tut-step-label').textContent = `Step ${step + 1} of ${steps.length}`;
+    document.getElementById('tut-title').textContent = s.title;
+    document.getElementById('tut-desc').textContent = s.desc;
+    card.setAttribute('data-arrow', s.arrow);
+
+    const nextBtn = document.getElementById('tut-next-btn');
+    nextBtn.textContent = step === steps.length - 1 ? 'Got it! 🎉' : 'Next →';
+
+    const pad = 8;
+    spotlight.style.top    = (rect.top    - pad) + 'px';
+    spotlight.style.left   = (rect.left   - pad) + 'px';
+    spotlight.style.width  = (rect.width  + pad * 2) + 'px';
+    spotlight.style.height = (rect.height + pad * 2) + 'px';
+    spotlight.classList.add('active');
+
+    const cardH = 260;
+    const viewH = window.innerHeight;
+    let cardTop = rect.bottom + 18;
+    if (cardTop + cardH > viewH - 16) {
+      cardTop = rect.top - cardH - 18;
+      card.setAttribute('data-arrow', 'bottom');
+    }
+    card.style.top = cardTop + 'px';
+    card.style.bottom = 'auto';
+
+    card.classList.remove('active');
+    void card.offsetWidth;
+    card.classList.add('active');
+  };
+
+  setTimeout(doPosition, 150);
+}
+
+function nextTutorialStep() {
+  tutStep++;
+  if (tutStep >= TUTORIAL_STEPS.length) {
+    endTutorial();
+  } else {
+    showTutorialStep(tutStep);
+  }
+}
+
+function skipTutorial() {
+  endTutorial();
+}
+
+function endTutorial() {
+  localStorage.setItem('wte_tutorial_done', '1');
+  document.getElementById('tutorial-card').classList.remove('active');
+  document.getElementById('tutorial-spotlight').classList.remove('active');
+  // Restore match tab to lobby state
+  showMsub('msub-lobby');
 }

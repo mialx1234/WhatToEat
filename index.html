@@ -15,7 +15,10 @@
 <div class="share-banner" id="share-banner"></div>
 <header>
   <div class="logo">WhatToEat</div>
-  <button id="lang-btn" onclick="toggleLang()">中文</button>
+  <div class="header-btns">
+    <button id="lang-btn" onclick="toggleLang()">中文</button>
+    <button id="tut-replay-btn" onclick="replayTutorial()">Tutorial ✦</button>
+  </div>
 </header>
 <nav id="main-nav">
   <button class="tab active" onclick="switchTab('spin')">Spin</button>
@@ -235,6 +238,21 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- TUTORIAL -->
+<div id="tutorial-spotlight"></div>
+<div class="tutorial-card" id="tutorial-card">
+  <div class="tutorial-art" id="tut-art"></div>
+  <div class="tutorial-body">
+    <div class="tutorial-step-label" id="tut-step-label">1 of 4</div>
+    <div class="tutorial-title" id="tut-title"></div>
+    <div class="tutorial-desc" id="tut-desc"></div>
+  </div>
+  <div class="tutorial-footer">
+    <button class="tutorial-skip-btn" onclick="skipTutorial()">Skip tutorial</button>
+    <button class="tutorial-next-btn" id="tut-next-btn" onclick="nextTutorialStep()">Next →</button>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>
