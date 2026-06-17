@@ -66,6 +66,18 @@
 <div class="view" id="match-view">
   <div class="match-layout">
 
+    <!-- Invited via link -->
+    <div class="msub" id="msub-invited">
+      <div class="match-headline">You're invited! 🎉</div>
+      <div class="match-sub">Your friend wants to match on food with you</div>
+      <div class="invite-code-box">
+        <div class="invite-code-label">Room code</div>
+        <div class="invite-code-display" id="invite-code-display">------</div>
+      </div>
+      <button class="btn-primary" style="width:100%;font-size:17px;padding:16px" onclick="joinFromInvite()">Join Room →</button>
+      <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="showMsub('msub-lobby')">Not now</button>
+    </div>
+
     <!-- Lobby: create or join -->
     <div class="msub active" id="msub-lobby">
       <div class="match-headline">Match with a friend</div>

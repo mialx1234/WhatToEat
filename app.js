@@ -259,15 +259,17 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshVisualItems();
   drawWheel();
 
-  // Handle ?room=XXXXXX join link — pre-fill code, user taps Join to confirm
+  // Handle ?room=XXXXXX join link — show dedicated invite screen
   const urlParams = new URLSearchParams(location.search);
   const roomParam = urlParams.get('room');
   if (roomParam) {
     const code = roomParam.toUpperCase();
     switchTab('match');
+    document.getElementById('invite-code-display').textContent = code;
+    // Also pre-fill the lobby input as fallback
     const inp = document.getElementById('join-code-input');
     if (inp) inp.value = code;
-    // Deliberately no auto-join: user must tap Join to enter the room
+    showMsub('msub-invited');
     return;
   }
 
@@ -827,6 +829,11 @@ async function hostStartGame() {
 // ══════════════════════════════════════════
 // JOIN ROOM (guest)
 // ══════════════════════════════════════════
+function joinFromInvite() {
+  const code = document.getElementById('invite-code-display').textContent.trim();
+  joinRoom(code);
+}
+
 async function joinRoom(codeOverride) {
   if (!initFirebase()) return;
 

@@ -187,6 +187,9 @@ body.guest-mode nav { display: none; }
 
 /* Waiting room */
 .room-code-box { background: var(--bg); border: 2px dashed var(--border); border-radius: 20px; padding: 28px 20px; text-align: center; width: 100%; margin-bottom: 20px; }
+.invite-code-box { background: var(--bg); border: 2.5px solid var(--primary); border-radius: 20px; padding: 28px 20px; text-align: center; width: 100%; margin: 24px 0; }
+.invite-code-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.invite-code-display { font-size: 42px; font-weight: 900; letter-spacing: 8px; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
 .room-code-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
 .room-code-big { font-size: 36px; font-weight: 900; letter-spacing: 6px; color: var(--primary-dark); margin-bottom: 14px; font-variant-numeric: tabular-nums; cursor: pointer; user-select: all; transition: opacity 0.15s; }
 .room-code-big:active { opacity: 0.6; }
