@@ -263,10 +263,25 @@ window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(location.search);
   const roomParam = urlParams.get('room');
   if (roomParam) {
+    const code = roomParam.toUpperCase();
     switchTab('match');
     const inp = document.getElementById('join-code-input');
-    if (inp) inp.value = roomParam.toUpperCase();
-    setTimeout(() => joinRoom(roomParam.toUpperCase()), 400);
+    if (inp) inp.value = code;
+
+    // Auto-join after all CDN scripts (Firebase) are fully loaded
+    let joined = false;
+    const tryAutoJoin = async (attempt = 0) => {
+      if (joined) return;
+      try {
+        if (typeof firebase === 'undefined' || !firebase.apps) throw new Error('not ready');
+        await joinRoom(code);
+        joined = true;
+      } catch (e) {
+        // Firebase not ready yet — retry up to 10 times (~3s)
+        if (attempt < 10) setTimeout(() => tryAutoJoin(attempt + 1), 300);
+      }
+    };
+    window.addEventListener('load', () => tryAutoJoin(), { once: true });
     return;
   }
 
@@ -827,7 +842,7 @@ async function hostStartGame() {
 // JOIN ROOM (guest)
 // ══════════════════════════════════════════
 async function joinRoom(codeOverride) {
-  if (!initFirebase()) return;
+  if (!initFirebase()) throw new Error('Firebase not ready');
 
   const code = (codeOverride || document.getElementById('join-code-input')?.value || '')
     .toUpperCase().replace(/\s/g,'');
@@ -1131,6 +1146,13 @@ function copyRoomLink() {
   navigator.clipboard.writeText(url)
     .then(() => showToast('🔗 Invite link copied!'))
     .catch(() => prompt('Share this link with your friend:', url));
+}
+
+function copyCode() {
+  if (!matchRoomId) return;
+  navigator.clipboard.writeText(matchRoomId)
+    .then(() => showToast('📋 Code copied!'))
+    .catch(() => {});
 }
 
 // ══════════════════════════════════════════
