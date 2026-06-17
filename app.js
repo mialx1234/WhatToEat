@@ -265,10 +265,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (roomParam) {
     const code = roomParam.toUpperCase();
     switchTab('match');
-    // Pre-fill invite display and lobby input
     document.getElementById('invite-code-display').textContent = code;
-    const inp = document.getElementById('join-code-input');
-    if (inp) inp.value = code;
 
     // If this device created this room, reconnect as host instead of showing invite screen
     if (localStorage.getItem('wte_my_room') === code) {
